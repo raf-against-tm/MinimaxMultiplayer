@@ -1,22 +1,21 @@
-;El siguiente codigo define los elementos necesarios para representar el juego NIM.
+;El siguiente codigo define los elementos necesarios para representar el juego NIM para multiples jugadores.
 
-;El NIM consiste en un numero de fichas sobre un tablero de manera que cada jugador, en su turno, puede coger 1, 2 o 3 fichas.
-; Pierde aquel jugador en cuyo turno no tenga fichas que coger.
-
-;Los diferentes estados del juego vendran determinados por el numero de fichas en el tablero, es decir, sera un numero natural.
-; El turno de cada jugador se indicara mediante un identificador.
+;La variante del NIM utilizada consiste en un numero de fichas sobre un tablero de manera que cada jugador, 
+; en su turno, puede coger 1, 2 o 3 fichas. Gana el jugador al que le toca mover despues de que se haya cogido
+; la ultima ficha.
 
 ;Definicion de variables globales
 
 (defvar *movimientos* '(quitar-uno quitar-dos quitar-tres))
 (defvar *minimo-valor* 0)
 (defvar *maximo-valor* 1)
-(defvar *max* 1)
-(defvar *min* 2)
+(defvar *numero-jugadores* 3)
 
-;Funciones de accesso a los elementos de un nodo del juego
+;Un nodo del juego esta formado por una lista con el estado del mismo y el turno del jugador al que le toca mover.
+; Los estados del juego vendran determinados por el numero de fichas en el tablero.
+; El turno de cada jugador se indicara mediante un identificador numerico.
 
-;Un nodo se constituye por una lista con un primer elemento como estado del juego y un segundo elemento que indica el turno del jugador.
+;Funciones de accesso a los elementos de un nodo del juego.
 
 (defun estado (nodo)
   "devuelve el estado del juego en el nodo dado, en este caso, el primer elemento de la lista"
@@ -37,7 +36,7 @@
 
 (defun es-estado-ganador (estado turno jugador)
   "identifica estado ganador para el jugador dado teniendo en cuenta el turno"
-  (if (and (es-estado-final estado) (not (eq turno jugador))) T NIL)
+  (if (and (es-estado-final estado) (eq turno jugador)) T NIL)
 )
 
 (defun aplica-movimiento (movimiento estado)
@@ -47,10 +46,11 @@
 
 (defun evaluacion-estatica (estado turno)
   "valora un nodo a partir del estado y el turno de movimiento en ese estado"
-  (cond ((es-estado-ganador estado turno 1) (list 1 0))
-        ((es-estado-ganador estado turno 2) (list 0 1))
-        (t (list 0 0))
-  )
+  (loop for jugador from 1 to *numero-jugadores*
+       if (es-estado-ganador estado turno jugador)
+           collect 1
+       else 
+           collect 0)
 )
 
 ;Funciones que realizan las operaciones asociadas a los movimientos del juego
@@ -72,9 +72,9 @@
 
 ;Funciones auxiliares
 
-(defun siguiente-turno (jugador)
+(defun siguiente-turno (turno-actual)
   "devuelve el identificador del jugador al que le toca mover en el siguiente turno"
-  (if (eq jugador 1) 2 1)
+  (if (eq turno-actual *numero-jugadores*) 1 (1+ turno-actual))
 )
 
 (defun construye-nodo (estado turno)
