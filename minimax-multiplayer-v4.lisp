@@ -15,7 +15,7 @@
 ;   + turno(nodo)
 ;   + siguiente-turno(turno)
 
-;ESTE CODIGO CORRESPONDE A LA VERSION 3 DE MINIMAX-MULTIPLAYER, EN LA QUE SE INCLUYE LA POSIBILIDAD DE ESTABLECER UNA PROFUNDIDAD LIMITE, UN TIEMPO LIMITE (SEGUNDOS) O AMBOS LIMITES PARA LA EXPLORACION DEL ARBOL DEL JUEGO.
+;ESTE CODIGO CORRESPONDE A LA VERSION 4 DE MINIMAX-MULTIPLAYER, EN LA QUE SE INCLUYE LA POSIBILIDAD DE ELEGIR HEURISTICA
 
 (defun decision-maxn (actual profundidad tiempo) ;Para omitir la profundidad o el tiempo basta con pasar un valor negativo.
   "devuelve el nodo sucesor correspondiente al movimiento mejor valorado para el jugador que lo invoca, para ello se construye de manera reursiva el arbol del juego"
