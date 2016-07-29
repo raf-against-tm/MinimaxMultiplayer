@@ -72,11 +72,6 @@
 
 ;Funciones auxiliares
 
-(defun siguiente-turno (turno-actual)
-  "devuelve el identificador del jugador al que le toca mover en el siguiente turno"
-  (if (eq turno-actual *numero-jugadores*) 1 (1+ turno-actual))
-)
-
 (defun construye-nodo (estado turno)
   "devuelve un nodo del juego formado por el estado y el turno dados"
   (list estado turno)

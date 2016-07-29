@@ -65,5 +65,10 @@
   "a partir del vector de puntuacion, que contiene un valor por cada puntuacion de cada jugador, devuelve la puntuacion correspondiente al jugador especificado"
   (nth (1- jugador) puntuacion)
 )
+
+(defun siguiente-turno (turno-actual)
+  "devuelve el identificador del jugador al que le toca mover en el siguiente turno"
+  (if (eq turno-actual *numero-jugadores*) 1 (1+ turno-actual))
+)
     
 

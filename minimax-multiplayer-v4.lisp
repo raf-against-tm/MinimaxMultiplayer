@@ -15,37 +15,56 @@
 ;   + turno(nodo)
 ;   + siguiente-turno(turno)
 
-;ESTE CODIGO CORRESPONDE A LA VERSION 4 DE MINIMAX-MULTIPLAYER, EN LA QUE SE INCLUYE LA POSIBILIDAD DE ELEGIR HEURISTICA
+;ESTE CODIGO CORRESPONDE A LA VERSION 4 DE MINIMAX-MULTIPLAYER, EN LA QUE SE INCLUYE LA POSIBILIDAD DE ELEGIR HEURISTICA (TIPOS DE JUGADOR)
 
-(defun decision-maxn (actual profundidad tiempo) ;Para omitir la profundidad o el tiempo basta con pasar un valor negativo.
-  "devuelve el nodo sucesor correspondiente al movimiento mejor valorado para el jugador que lo invoca, para ello se construye de manera reursiva el arbol del juego"
-  (let ((max-val *minimo-valor*) (max-nodo ()) (jugador (turno actual)) (instante-inicial (get-universal-time)))
+;En esta última version se han renombrado de manera mas generica a las funciones pues dependen del tipo de jugador elegido para su aplicacion.
+
+(defvar *heuristicas* '(jugador-egoista jugador-paranoico jugador-aleatorio))
+
+(defun decide-movimiento (actual profundidad tiempo heuristica) ;Para omitir la profundidad o el tiempo basta con pasar un valor negativo.
+  "devuelve el nodo sucesor correspondiente al movimiento mejor valorado para el jugador que lo invoca y segun la heuristica especificada"
+  (let ((h-max-val *minimo-valor*) (h-max-nodo ()) (jugador (turno actual)) (instante-inicial (get-universal-time)))
     (loop for nodo in (sucesores actual)
-       do (let* ((puntuacion (valor-maxn nodo max-val (1- profundidad) tiempo instante-inicial)))
-            (if (>= (puntuacion-jugador puntuacion jugador) max-val)
-                (progn (setf max-val (puntuacion-jugador puntuacion jugador))
-                       (setf max-nodo nodo))))
-       if (or (= max-val *maximo-valor*) (tiempo-expirado tiempo instante-inicial)) do (loop-finish))
-    max-nodo)
+         do (let* ((puntuacion (valor-movimiento nodo h-max-val (1- profundidad) tiempo instante-inicial jugador heuristica)))
+              (if (>= (puntuacion-jugador puntuacion jugador) h-max-val)
+                  (progn (setf h-max-val (puntuacion-jugador puntuacion jugador))
+                         (setf h-max-nodo nodo))))
+         if (or (= h-max-val *maximo-valor*) (tiempo-expirado tiempo instante-inicial)) do (loop-finish))
+    h-max-nodo)
 )
 
-(defun valor-maxn (nodo cota-puntos profundidad tiempo instante-inicial)
+(defun valor-movimiento (nodo cota-puntos profundidad tiempo instante-inicial jugador-inicial heuristica)
   "devuelve la puntuacion del nodo sucesor mejor valorado para el jugador del nodo actual"
   (if (or (es-estado-final (estado nodo)) (not (sucesores nodo)) (eq profundidad 0))
       (evaluacion-estatica (estado nodo) (turno nodo))
-      (maximiza-puntuacion (sucesores nodo) (turno nodo) cota-puntos (1- profundidad) tiempo instante-inicial))
+      (aplica-heuristica heuristica (sucesores nodo) (turno nodo) cota-puntos (1- profundidad) tiempo instante-inicial jugador-inicial))
 )
 
-(defun maximiza-puntuacion (sucesores jugador cota-puntos profundidad tiempo instante-inicial)
+(defun maximiza-puntuacion (sucesores jugador cota-puntos profundidad tiempo instante-inicial jugador-inicial heuristica)
   "devuelve la puntuacion maxima de entre las puntuaciones de los nodos sucesores, para el jugador pasado como parametro"
   (let ((max-val *minimo-valor*) (max-puntuacion ()))
         (loop for nodo in sucesores
-           do (let* ((puntuacion (valor-maxn nodo max-val profundidad tiempo instante-inicial)))
-                (if (>= (puntuacion-jugador puntuacion jugador) max-val)
-                    (progn (setf max-val (puntuacion-jugador puntuacion jugador))
-                           (setf max-puntuacion puntuacion))))
+           do (let* ((puntuacion (valor-movimiento nodo max-val profundidad tiempo instante-inicial jugador-inicial heuristica)))
+                 (if (>= (puntuacion-jugador puntuacion jugador) max-val)
+                     (progn (setf max-val (puntuacion-jugador puntuacion jugador))
+                            (setf max-puntuacion puntuacion))))
            if (or (<= (- *maximo-valor* max-val) cota-puntos) (tiempo-expirado tiempo instante-inicial)) do (loop-finish))
    max-puntuacion)
+)
+
+(defun minimiza-puntuacion (sucesores profundidad tiempo instante-inicial jugador-inicial heuristica)
+  "devuelve la puntuacion minima de entre las puntuaciones de los nodos sucesores, para el jugador pasado como parametro"
+  (let ((min-val *maximo-valor*) (min-puntuacion ()))
+        (loop for nodo in sucesores
+           do (let* ((puntuacion (valor-movimiento nodo min-val profundidad tiempo instante-inicial jugador-inicial heuristica)))
+                 (if (<= (puntuacion-jugador puntuacion jugador-inicial) min-val)
+                     (progn (setf min-val (puntuacion-jugador puntuacion jugador-inicial))
+                            (setf min-puntuacion puntuacion))))
+           if (or (= min-val *minimo-valor*) (tiempo-expirado tiempo instante-inicial)) do (loop-finish)); Poda inmediata
+           ;En este punto solo tiene sentido la poda inmediata pues como busca minimizar el valor del jugador inicial, salvo que se dé el caso
+           ; de que la puntuacion del jugador inicial sea minima es necesario seguir evaluando el resto de nodos por este camino con objeto
+           ; de encontrar la puntuacion menor posible.
+   min-puntuacion)
 )
 
 (defun sucesores (nodo)
@@ -70,6 +89,11 @@
   (nth (1- jugador) puntuacion)
 )
 
+(defun siguiente-turno (turno-actual)
+  "devuelve el identificador del jugador al que le toca mover en el siguiente turno"
+  (if (eq turno-actual *numero-jugadores*) 1 (1+ turno-actual))
+)
+
 (defun tiempo-transcurrido (instante-inicial)
   "devuelve el tiempo transcurrido entre el instante inicial pasado como parametro y el instante actual, en segundos"
   (- (get-universal-time) instante-inicial)
@@ -80,4 +104,35 @@
   (and (>= tiempo 0) (<= tiempo (tiempo-transcurrido instante-inicial)))
   ;Comprobar que el tiempo sea mayor o igual que cero posibilita que, al pasar un valor negativo de tiempo, este nunca expire.
   ; El objetivo de esto es desactivar el tiempo limite pasando un valor negativo.
+)
+
+(defun aplica-heuristica (heuristica sucesores jugador cota-puntos profundidad tiempo instante-inicial jugador-inicial)
+  "aplica la heuristica pasada como parametro y devuelve el valor correspondiente"
+  (if (eq heuristica 'jugador-aleatorio)
+      (jugador-aleatorio jugador-inicial)
+      (funcall heuristica sucesores jugador cota-puntos profundidad tiempo instante-inicial jugador-inicial heuristica))
+)
+
+;Funciones heuristicas
+
+(defun jugador-egoista (sucesores jugador cota-puntos profundidad tiempo instante-inicial jugador-inicial heuristica)
+  "el jugador elige su mejor jugada y piensa que el resto elegira su mejor jugada"
+  (maximiza-puntuacion sucesores jugador cota-puntos profundidad tiempo instante-inicial jugador-inicial heuristica)
+)
+
+(defun jugador-paranoico (sucesores jugador cota-puntos profundidad tiempo instante-inicial jugador-inicial heuristica)
+  "el jugador elige su mejor jugada y piensa que el resto escogeran la peor jugada para el"
+  (if (eq jugador jugador-inicial)
+      (maximiza-puntuacion sucesores jugador cota-puntos profundidad tiempo instante-inicial jugador-inicial heuristica)
+      (minimiza-puntuacion sucesores profundidad tiempo instante-inicial jugador-inicial heuristica))
+)
+
+(defun jugador-aleatorio (jugador)
+  "el jugador elige una jugada cualquiera"
+  (let ((h-val (random *maximo-valor*)))
+    (loop for j from 1 to *numero-jugadores*
+       if (eq j jugador)
+           collect h-val
+       else 
+           collect 0))
 )

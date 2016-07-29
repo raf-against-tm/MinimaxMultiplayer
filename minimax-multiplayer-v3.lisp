@@ -70,6 +70,11 @@
   (nth (1- jugador) puntuacion)
 )
 
+(defun siguiente-turno (turno-actual)
+  "devuelve el identificador del jugador al que le toca mover en el siguiente turno"
+  (if (eq turno-actual *numero-jugadores*) 1 (1+ turno-actual))
+)
+
 (defun tiempo-transcurrido (instante-inicial)
   "devuelve el tiempo transcurrido entre el instante inicial pasado como parametro y el instante actual, en segundos"
   (- (get-universal-time) instante-inicial)
