@@ -19,7 +19,7 @@
 
 ;En esta última version se han renombrado de manera mas generica a las funciones pues dependen del tipo de jugador elegido para su aplicacion.
 
-(defvar *heuristicas* '(jugador-egoista jugador-paranoico jugador-aleatorio))
+(defconstant *heuristicas* '(jugador-egoista jugador-paranoico jugador-aleatorio))
 
 (defun decide-movimiento (actual profundidad tiempo heuristica) ;Para omitir la profundidad o el tiempo basta con pasar un valor negativo.
   "devuelve el nodo sucesor correspondiente al movimiento mejor valorado para el jugador que lo invoca y segun la heuristica especificada"
