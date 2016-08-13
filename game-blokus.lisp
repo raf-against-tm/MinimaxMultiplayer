@@ -65,13 +65,12 @@
 
 (defvar *numero-jugadores* 4) ;Juego de 2 a 4 jugadores
 (defvar *estado-inicial* (make-estado))
+(defvar *rotaciones* '(rota90 rota180 rota270))
 
 ;Inicializacion.
 
-(setf (gethash 1 (estado-jugadores *estado-inicial*)) piezas)
-(setf (gethash 2 (estado-jugadores *estado-inicial*)) piezas)
-(setf (gethash 3 (estado-jugadores *estado-inicial*)) piezas)
-(setf (gethash 4 (estado-jugadores *estado-inicial*)) piezas)
+(loop for j from 1 to *numero-jugadores*
+	do (setf (gethash j (estado-jugadores *estado-inicial*)) piezas))
 
 ;Funciones de acceso.
 
@@ -113,25 +112,49 @@
 
 ;Funciones para la representación del juego
 
-;(defun es-estado-final (estado-actual)
- ; "indentifica estado final"
-  ;(let ((existe-ganador NIL) (tablero-completo *numero-jugadores*) ()
-  ;  (loop for jugador from 1 to *numero-jugadores*
-  ;     if (equal (gethash jugador (estado-jugadores estado-actual)) NIL)
- ;          do (progn (setf existe-ganador T)
-;                     (loop-finish))))
-  ;     else 
- ;          do ;Comprueba si tiene movimientos posibles
-;))
+(defun es-estado-final (estado-actual)
+  "determina si el estado dado es un estado final del juego"
+  (let ((tablero (estado-tablero estado-actual))
+		(ftablero (first dim-tablero)) (ctablero (second dim-tablero)))
+		
+	(loop for jugador from 1 to *numero-jugadores* ;Comprueba si hay algun jugador que haya usado todas sus piezas.
+		if (eq (gethash jugador (estado-jugadores estado-actual)) nil)
+		    do (return-from es-estado-final t))
+			
+			
+	(loop for jugador from 1 to *numero-jugadores* ;Comprueba que no pueden colocar ninguna pieza en el tablero.
+			do (loop for pieza in (gethash jugador (estado-jugadores estado-actual))
+					do (loop for i from 1 to ftablero
+							do (loop for j from 1 to ctablero
+								do (loop for inicial in '(t nil)
+										do (if (movimiento-valido tablero pieza (list i j) jugador inicial)
+											   (return-from es-estado-final nil)
+											   
+											   (if (movimiento-valido tablero (refleja pieza) (list i j) jugador inicial)
+												   (return-from es-estado-final nil)
+												   
+												   (loop for rotacion in *rotaciones*
+														do (if (movimiento-valido tablero (funcall rotacion pieza) (list i j) jugador inicial)
+															   (return-from es-estado-final nil)
+															   
+															   (if (movimiento-valido tablero (refleja (funcall rotacion pieza)) (list i j) jugador inicial)
+																   (return-from es-estado-final nil))))))))))))
+		
+	t ;No hay ningun posible movimiento para ningun jugador.
+)
 
-;(defun es-estado-ganador (estado-actual turno-actual jugador)
-;  "identifica estado ganador para el jugador dado teniendo en cuenta el turno"
-;  ()
-;)
+
+
+(defun es-estado-ganador (estado-actual jugador)
+  "determina si el estado dado es ganador para el jugador dado"
+  (if (and (es-estado-final estado-actual) (eq (gethash jugador (estado-jugadores estado-actual)) nil))
+	   t
+	   nil)
+)
 
 (defun aplica-movimiento (movimiento estado-actual)
-  "genera el estado sucesor para cada posible movimiento del juego"
-  (let* ((pieza (movimiento-pieza movimiento))
+	"genera el estado sucesor para cada posible movimiento del juego"
+	(let* ((pieza (movimiento-pieza movimiento))
 		 (posicion (movimiento-posicion movimiento)) ;Posicion del tablero en la que se coloca la pieza.
 		 (jugador (movimiento-jugador movimiento))   ;Identifica al jugador que hace el movimiento.
 		 (inicial (movimiento-inicial movimiento))	 ;Indica si el movimiento es inicial.
@@ -142,19 +165,21 @@
 		 (tablero (estado-tablero estado-sucesor)) 	 ;El tablero del estado sucesor es una copia del de estado actual.
 		 (valido t))
 		 
-	(if (movimiento-valido tablero pieza posicion jugador inicial)
-		(loop for i from 0 to (- fpieza 1) ;Recorre la pieza asociada al movimiento.
-			do (loop for j from 0 to (- cpieza 1)
-					do (setf (aref tablero (+ i tx) (+ j ty)) (* jugador (aref pieza i j))))) ;El bloque lleva el identificador del jugador.
+		(if (movimiento-valido tablero pieza posicion jugador inicial)
+			(loop for i from 0 to (- fpieza 1) ;Recorre la pieza asociada al movimiento.
+				do (loop for j from 0 to (- cpieza 1)
+						do (setf (aref tablero (+ i tx) (+ j ty)) (* jugador (aref pieza i j))))) ;El bloque lleva el identificador del jugador.
 					  
-		(setf valido nil))
+			(setf valido nil))
 		
-	(if (not valido)
-		'no-aplicable
-		(progn (setf (gethash jugador (estado-jugadores estado-sucesor)) 
-					 (remove pieza (gethash jugador (estado-jugadores estado-sucesor))))
-				estado-sucesor)))
+		(if (not valido)
+			'no-aplicable
+			(progn (setf (gethash jugador (estado-jugadores estado-sucesor)) 
+						 (remove pieza (gethash jugador (estado-jugadores estado-sucesor))))
+					estado-sucesor)))
 )
+
+;SI UN JUGADOR NO PUEDE PONER PIEZAS PERO OTROS SI HAY QUE PASAR EL TURNO, EL SUCESOR. VERIFICAR ESTO.
     
 ;(defun evaluacion-estatica (estado-actual turno-actual)
 ;  "valora un nodo a partir del estado y el turno de movimiento en ese estado"
@@ -163,26 +188,41 @@
 
 ; Funciones auxiliares
 
+(defun construye-nodo (estado-actual turno-actual)
+	"devuelve un nodo del juego formado por el estado y el turno dado"
+	(list estado-actual turno-actual)
+)
+
 (defun color-jugador (jugador)
-  "devuelve el color asociado al jugador dado"
-  (case jugador (1 color-jugador-1) (2 color-jugador-2) (3 color-jugador-3) (4 color-jugador-4))
+	"devuelve el color asociado al jugador dado"
+	(case jugador (1 color-jugador-1) (2 color-jugador-2) (3 color-jugador-3) (4 color-jugador-4))
 )
 
 (defun rota90 (pieza)
-  "rota 90 grados la pieza dada"
-  (let* ((dim (array-dimensions pieza)) (f (first dim)) (c (second dim)) (res (make-array (list c f))))
-    (loop for i from 0 to (- f 1)
-         do (loop for j from 0 to (- c 1)
-                 do (setf (aref res j (- (- f 1) i)) (aref pieza i j))))
-    res)
+	"rota 90 grados la pieza dada"
+	(let* ((dim (array-dimensions pieza)) (f (first dim)) (c (second dim)) (res (make-array (list c f))))
+		(loop for i from 0 to (- f 1)
+			do (loop for j from 0 to (- c 1)
+					do (setf (aref res j (- (- f 1) i)) (aref pieza i j))))
+	res)
+)
+
+(defun rota180 (pieza)
+	"rota 180 grados la pieza dada"
+	(rota90 (rota90 pieza))
+)
+
+(defun rota270 (pieza)
+	"rota 270 grados la pieza dada"
+	(rota90 (rota90 (rota90 pieza)))
 )
 
 (defun refleja (pieza)
-  "refleja la forma de la pieza original dada"
-  (let* ((dim (array-dimensions pieza)) (f (first dim)) (c (second dim)) (res (make-array (list f c))))
-    (loop for i from 0 to (- f 1)
-         do (loop for j from 0 to (- c 1)
-                 do (setf (aref res i (- (- c 1) j)) (aref pieza i j))))
+	"refleja la forma de la pieza original dada"
+	(let* ((dim (array-dimensions pieza)) (f (first dim)) (c (second dim)) (res (make-array (list f c))))
+		(loop for i from 0 to (- f 1)
+			do (loop for j from 0 to (- c 1)
+					do (setf (aref res i (- (- c 1) j)) (aref pieza i j))))
     res)
 )
 
@@ -384,4 +424,3 @@
 		(loop for valor in (list bsuperior-der binferior-der binferior-izq bsuperior-izq)
 			if (eq valor jugador) return t))	
 )
-

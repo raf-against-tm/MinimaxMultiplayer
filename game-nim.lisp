@@ -28,12 +28,12 @@
 ;Funciones necesarias para la representación del juego
 
 (defun es-estado-final (estado-actual)
-  "indentifica estado final"
+  "determina si el estado dado es un estado final del juego"
   (if (= estado-actual 0) T NIL)
 )
 
 (defun es-estado-ganador (estado-actual turno-actual jugador)
-  "identifica estado ganador para el jugador dado teniendo en cuenta el turno"
+  "determina si el estado dado es ganador para el jugador dado"
   (if (and (es-estado-final estado-actual) (eq turno-actual jugador)) T NIL)
 )
 
@@ -71,7 +71,7 @@
 ;Funciones auxiliares
 
 (defun construye-nodo (estado-actual turno-actual)
-  "devuelve un nodo del juego formado por el estado y el turno dados"
+  "devuelve un nodo del juego formado por el estado y el turno dado"
   (list estado-actual turno-actual)
 )
   

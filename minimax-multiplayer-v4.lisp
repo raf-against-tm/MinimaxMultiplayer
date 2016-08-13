@@ -1,8 +1,8 @@
-; Algorimo de decision minimax extendido para aplicarlo a multiples jugadores. Renombrado como decision-maxn.
+; Algorimo de decision minimax extendido para aplicarlo a multiples jugadores. Renombrado en esta vesion a decide-movimiento.
 
-;Para hacer uso del algoritmo se supone que ha sido cargada, previamente, la implementacion de la especificacin del juego sobre el que se va aplicar el algoritmo.
-
-;En toda especificacion de cualquier juego se representara cada jugador por un numero, de manera que sea mas sencillo identificarlo y obtener su puntuacion correspondiente en el vector de puntuciones devuelto por la funcion de evaluacion estatica.
+;Para hacer uso del algoritmo se supone que ha sido cargada, previamente, la implementacion de la especificacion del juego sobre 
+; el que se va aplicar el algoritmo. En toda especificacion, de cualquier juego, se representara cada jugador por un numero, de manera que 
+; sea mas sencillo identificarlo y obtener su puntuacion correspondiente en el vector de puntuciones devuelto por la funcion de evaluacion estatica.
 
 ;  Dicha implementación debe incluir las siguientes variables globales:
 ;   - *minimo-valor*
