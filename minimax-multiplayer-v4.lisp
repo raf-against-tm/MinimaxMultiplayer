@@ -79,7 +79,7 @@
   (let ((estado-sucesor (aplica-movimiento movimiento (estado nodo))))
     (if (equal estado-sucesor 'no-aplicable) 
         'no-aplicable 
-        (construye-nodo estado-sucesor (siguiente-turno (turno nodo)))))
+        (construye-nodo estado-sucesor (siguiente-turno (turno nodo))))
 )
 
 ;Funciones auxiliares

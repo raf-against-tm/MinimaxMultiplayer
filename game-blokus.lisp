@@ -10,13 +10,16 @@
 ; respecto a las ya colocadas por parte del propio jugador (pueden ser contiguas a otras de otros jugadores pero siempre oblicua a alguna
 ; perteneciente al mismo). El estado inicial es el tablero vacío (toda casilla a 0) y las listas de piezas de cada jugador completas.
 
+;Cada bloque de cada pieza equivale a 1 punto (todas las piezas de un jugador son 89 bloques), el jugador que coloca todas las piezas 
+; suma 15 puntos adicionales. Ademas si la pieza de un bloque, I1, es la última en ser colocada, se suman 5 puntos mas para dicho jugador. 
+; Inicialmente todos empiezan con 0 puntos y en total hay 356 puntos entre los 4 jugadores.
+
 ;Los posibles estados finales dependen de si algun jugador ha colocado todas sus fichas (ganador) o ningun jugador puede colocar ninguna
 ;ficha mas en el tablero (gana quien mas bloques haya colocado en el tablero).
 
 ;El juego tiene un maximo de 4 jugadores y un minimo de 2 y cada jugador comienza en una esquina del tablero.
 
 ;Los jugadores se identificaran con los numeros del 1 al 4. Eventualmente tienen asociado un color.
-
 
 ;Definicion de constantes.
 
@@ -63,6 +66,8 @@
 
 ;Definicion de variables.
 
+(defvar *min-val* 0)
+(defvar *max-val* 356)
 (defvar *numero-jugadores* 4) ;Juego de 2 a 4 jugadores
 (defvar *estado-inicial* (make-estado))
 (defvar *rotaciones* '(rota90 rota180 rota270))
@@ -143,8 +148,6 @@
 	t ;No hay ningun posible movimiento para ningun jugador.
 )
 
-
-
 (defun es-estado-ganador (estado-actual jugador)
   "determina si el estado dado es ganador para el jugador dado"
   (if (and (es-estado-final estado-actual) (eq (gethash jugador (estado-jugadores estado-actual)) nil))
@@ -178,13 +181,150 @@
 						 (remove pieza (gethash jugador (estado-jugadores estado-sucesor))))
 					estado-sucesor)))
 )
-
-;SI UN JUGADOR NO PUEDE PONER PIEZAS PERO OTROS SI HAY QUE PASAR EL TURNO, EL SUCESOR. VERIFICAR ESTO.
     
-;(defun evaluacion-estatica (estado-actual turno-actual)
-;  "valora un nodo a partir del estado y el turno de movimiento en ese estado"
-;  ()
-;)
+(defun evaluacion-estatica (estado-actual turno-actual)
+  "valora un nodo a partir del estado y el turno pertencientes al mismo"
+  (loop for jugador from 1 to *numero-jugadores*
+	collect (loop for pieza in piezas
+				if (not (member pieza (gethash jugador (estado-jugadores estado-actual))))
+					sum (puntuacion-pieza pieza) into resultado
+					finally (if (es-estado-ganador estado-actual jugador)
+								(return (+ resultado 15))
+								(if (and (eq jugador turno-actual) (= resultado 88)) ; Solo le queda por poner la pieza I1 
+																					 ;  que suma 5 puntos adicionales en ese caso.
+									(return (+ resultado 5))
+									(return resultado)))))
+)
+
+(defun movimientos (estado-actual turno-actual)
+	"devuelve la lista de posibles movimientos dado un estado del juego"
+	(let ((piezas-jugador (gethash turno-actual (estado-jugadores estado-actual)))
+		  (ftablero (first dim-tablero)) (ctablero (first dim-tablero)))
+		  
+		 (if (= (length piezas-jugador) 21) ; Se trata del movimiento inicial. Comprueba repeticiones y validez.
+			 (loop for pieza in piezas-jugador
+				 if (and (equalp pieza (refleja pieza)) (inicial-valido pieza
+																	  (estado-tablero estado-actual)
+																	  (- (first (posicion-inicial pieza turno-actual)) 1)
+																	  (- (second (posicion-inicial pieza turno-actual)) 1)
+																	   turno-actual))			 
+																	   
+					 collect (construye-movimiento pieza (posicion-inicial pieza turno-actual) turno-actual t) into movimientos-jugador
+					 
+				 if (and (not (equalp pieza (refleja pieza))) (inicial-valido pieza
+																	  (estado-tablero estado-actual)
+																	  (- (first (posicion-inicial pieza turno-actual)) 1)
+																	  (- (second (posicion-inicial pieza turno-actual)) 1)
+																	   turno-actual)
+
+															  (inicial-valido (refleja pieza)
+																	  (estado-tablero estado-actual)
+																	  (- (first (posicion-inicial pieza turno-actual)) 1)
+																	  (- (second (posicion-inicial pieza turno-actual)) 1)
+																	   turno-actual))
+																	   
+					 append (list (construye-movimiento pieza (posicion-inicial pieza turno-actual) turno-actual t)
+					              (construye-movimiento (refleja pieza) (posicion-inicial pieza turno-actual) turno-actual t)) into movimientos-jugador
+				  
+				 append (loop for rotacion in *rotaciones*
+					        if (and (not (find (construye-movimiento (funcall rotacion pieza) 
+																     (posicion-inicial pieza turno-actual) turno-actual t)					 
+												movimientos-jugador :test #'equalp))
+																  
+							        (not (find (construye-movimiento (funcall rotacion pieza) 
+																     (posicion-inicial pieza turno-actual) turno-actual t)																	 
+												mj :test #'equalp))
+												
+									(inicial-valido (funcall rotacion pieza)
+													(estado-tablero estado-actual)
+													(- (first (posicion-inicial pieza turno-actual)) 1)
+													(- (second (posicion-inicial pieza turno-actual)) 1)
+													turno-actual))
+											
+						        collect (construye-movimiento (funcall rotacion pieza) 
+								                              (posicion-inicial pieza turno-actual) turno-actual t) into mj
+						  
+					        if (and (not (find (construye-movimiento (refleja (funcall rotacion pieza)) 
+							                                         (posicion-inicial pieza turno-actual) turno-actual t)
+											    movimientos-jugador :test #'equalp))
+																  
+									(not (find (construye-movimiento (refleja (funcall rotacion pieza)) 
+							                                     (posicion-inicial pieza turno-actual) turno-actual t)
+										        mj :test #'equalp))
+												
+									(inicial-valido (refleja (funcall rotacion pieza))
+													(estado-tablero estado-actual)
+													(- (first (posicion-inicial pieza turno-actual)) 1)
+													(- (second (posicion-inicial pieza turno-actual)) 1)
+													turno-actual))
+											
+						        collect (construye-movimiento (refleja (funcall rotacion pieza)) 
+								                              (posicion-inicial pieza turno-actual) turno-actual t) into mj
+															   
+							finally (return mj))
+								 
+				 into movimientos-jugador
+			  
+				 finally (return movimientos-jugador))
+				 
+				 
+			 (loop for pieza in piezas-jugador ;No se trata de un movimiento inicial.
+				append (loop for i from 1 to ftablero
+					   append (loop for j from 1 to ctablero
+							  if (and (equalp pieza (refleja pieza)) (movimiento-valido 
+																	     (estado-tablero estado-actual)
+																		  pieza
+																	     (list i j)
+																	      turno-actual
+																		  nil))
+																	   
+								  collect (construye-movimiento pieza (list i j) turno-actual nil) into movimientos-jugador
+								  
+							  if (and (not (equalp pieza (refleja pieza))) (movimiento-valido
+																		 (estado-tablero estado-actual)
+																		  pieza
+																	     (list i j)
+																		  turno-actual
+																		  nil)
+
+																		   (movimiento-valido
+																	     (estado-tablero estado-actual)
+																		 (refleja pieza)
+																	     (list i j)
+																	      turno-actual
+																		  nil))
+			
+								  append (list (construye-movimiento pieza (list i j) turno-actual nil)
+					             (construye-movimiento (refleja pieza) (list i j) turno-actual nil)) into movimientos-jugador
+								 
+							  append (loop for rotacion in *rotaciones*
+										if (and (not (find (construye-movimiento (funcall rotacion pieza) (list i j) turno-actual nil)					 
+															movimientos-jugador :test #'equalp))
+																  
+												(not (find (construye-movimiento (funcall rotacion pieza) (list i j) turno-actual nil)																	 
+															mj :test #'equalp))
+												
+												(movimiento-valido (estado-tablero estado-actual) (funcall rotacion pieza) (list i j) turno-actual nil))
+											
+											collect (construye-movimiento (funcall rotacion pieza) (list i j) turno-actual nil) into mj
+						  
+										if (and (not (find (construye-movimiento (refleja (funcall rotacion pieza)) (list i j) turno-actual nil)
+															movimientos-jugador :test #'equalp))
+																  
+												(not (find (construye-movimiento (refleja (funcall rotacion pieza)) (list i j) turno-actual nil)
+															mj :test #'equalp))
+												
+												(movimiento-valido (estado-tablero estado-actual) (refleja (funcall rotacion pieza)) 
+																   (list i j) turno-actual nil))
+											
+											collect (construye-movimiento (refleja (funcall rotacion pieza)) (list i j) turno-actual nil) into mj
+															   
+											finally (return mj))
+								 
+							  into movimientos-jugador
+			  
+							  finally (return movimientos-jugador))))))						           			  
+)
 
 ; Funciones auxiliares
 
@@ -193,10 +333,30 @@
 	(list estado-actual turno-actual)
 )
 
+(defun construye-movimiento (pieza posicion jugador inicial)
+	"crea la lista de elementos que constituye un movimiento"
+	(list pieza posicion jugador inicial)
+)
+
 (defun color-jugador (jugador)
 	"devuelve el color asociado al jugador dado"
 	(case jugador (1 color-jugador-1) (2 color-jugador-2) (3 color-jugador-3) (4 color-jugador-4))
 )
+
+(defun puntuacion-pieza (pieza)
+	"devuelve la puntuacion que supone tener la pieza dada colocada en el tablero"
+	(cond ((or (eq pieza Z5) (eq pieza L5) (eq pieza N5) (eq pieza Y5) (eq pieza U5) (eq pieza V5) 
+			   (eq pieza W5) (eq pieza I5) (eq pieza T5) (eq pieza F5) (eq pieza X5) (eq pieza P5)) 5) ;Piezas de 5 bloques.
+		  
+		  ((or (eq pieza O4) (eq pieza T4) (eq pieza L4) (eq pieza Z4) (eq pieza I4)) 4) 		   	   ;Piezas de 4 bloques.
+		  
+		  ((or (eq pieza V3) (eq pieza I3)) 3) 													       ;Piezas de 3 bloques.
+		  
+		  ((eq pieza I2) 2) 																	       ;Pieza de 2 bloques.
+		  
+		  ((eq pieza I1) 1)) 																	       ;Pieza de 1 bloque.
+		  
+)		  
 
 (defun rota90 (pieza)
 	"rota 90 grados la pieza dada"
@@ -314,6 +474,19 @@
 								t
 								nil))))	
 						
+)
+
+(defun posicion-inicial (pieza jugador)
+	"devuelve la posicion inicial para el jugador dado en funcion de la pieza dada"
+	(let* ((dim-pieza (array-dimensions pieza))
+		   (fpieza (first dim-pieza)) (cpieza (second dim-pieza))
+		   (ftablero (first dim-tablero)) (ctablero (second dim-tablero)))
+		   
+		   (cond ((= jugador 1) (list 1 1))
+				 ((= jugador 2) (list 1 (- ctablero (- cpieza 1))))
+				 ((= jugador 3) (list (- ftablero (- fpieza 1)) 1))
+				 ((= jugador 4) (list (- ftablero (- fpieza 1)) (- ctablero (- cpieza 1))))))
+				 
 )
 
 (defun fuera-del-tablero (fila columna)
