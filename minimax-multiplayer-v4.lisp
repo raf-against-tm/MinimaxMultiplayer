@@ -69,7 +69,7 @@
 
 (defun sucesores (nodo)
   "obtiene la lista de sucesores del nodo dado, a partir de los posibles movimientos que el juego permite al jugador que mueve en ese nodo"
-  (loop for movimiento in *movimientos*
+  (loop for movimiento in (movimientos (estado nodo) (turno nodo))
        if (not (equal (sucesor nodo movimiento) 'no-aplicable))
            collect (sucesor nodo movimiento))
 )
@@ -79,7 +79,7 @@
   (let ((estado-sucesor (aplica-movimiento movimiento (estado nodo))))
     (if (equal estado-sucesor 'no-aplicable) 
         'no-aplicable 
-        (construye-nodo estado-sucesor (siguiente-turno (turno nodo))))
+        (construye-nodo estado-sucesor (siguiente-turno (turno nodo)))))
 )
 
 ;Funciones auxiliares

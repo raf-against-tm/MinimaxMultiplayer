@@ -66,11 +66,14 @@
 
 ;Definicion de variables.
 
-(defvar *min-val* 0)
-(defvar *max-val* 356)
+(defvar *minimo-valor* 0)
+(defvar *maximo-valor* 356)
 (defvar *numero-jugadores* 4) ;Juego de 2 a 4 jugadores
 (defvar *estado-inicial* (make-estado))
+
 (defvar *rotaciones* '(rota90 rota180 rota270))
+(defvar *pasa-turno* (make-array '(1 1) :initial-contents '((0)))) ;Pieza especial para pasar turno si el jugador no tiene movimientos validos
+																   ; y el estado en el que se aplica no es un estado final.		
 
 ;Inicializacion.
 
@@ -126,24 +129,39 @@
 		if (eq (gethash jugador (estado-jugadores estado-actual)) nil)
 		    do (return-from es-estado-final t))
 			
-			
-	(loop for jugador from 1 to *numero-jugadores* ;Comprueba que no pueden colocar ninguna pieza en el tablero.
-			do (loop for pieza in (gethash jugador (estado-jugadores estado-actual))
-					do (loop for i from 1 to ftablero
-							do (loop for j from 1 to ctablero
-								do (loop for inicial in '(t nil)
-										do (if (movimiento-valido tablero pieza (list i j) jugador inicial)
+	(loop for jugador from 1 to *numero-jugadores* ;Comprueba que ningun jugador tiene movimientos validos.
+			if (= (length (gethash jugador (estado-jugadores estado-actual))) 21) ;Si tiene todas las piezas puede realizar el movimiento inicial.
+			    do (return-from es-estado-final nil)
+			   
+			else ;El jugador ya ha realizado el movimiento inicial.	
+				do (loop for pieza in (gethash jugador (estado-jugadores estado-actual))
+					   do (loop for i from 1 to ftablero
+						      do (loop for j from 1 to ctablero						
+									 do (if (movimiento-valido tablero pieza (list i j) jugador nil)
 											   (return-from es-estado-final nil)
 											   
-											   (if (movimiento-valido tablero (refleja pieza) (list i j) jugador inicial)
-												   (return-from es-estado-final nil)
-												   
-												   (loop for rotacion in *rotaciones*
-														do (if (movimiento-valido tablero (funcall rotacion pieza) (list i j) jugador inicial)
-															   (return-from es-estado-final nil)
-															   
-															   (if (movimiento-valido tablero (refleja (funcall rotacion pieza)) (list i j) jugador inicial)
-																   (return-from es-estado-final nil))))))))))))
+											   (progn (if (not (equalp pieza (refleja pieza)))
+														  (if (movimiento-valido tablero (refleja pieza) (list i j) jugador nil)
+															  (return-from es-estado-final nil))
+															
+														  (loop for rotacion in *rotaciones*
+															if (and (not (equalp (funcall rotacion pieza) pieza))
+																	(not (equalp (funcall rotacion pieza) (refleja pieza)))
+																	(not (find (funcall rotacion pieza) procesadas :test #'equalp)))
+																
+															    do (if (movimiento-valido tablero (funcall rotacion pieza) (list i j) jugador nil)
+																	   (return-from es-estado-final nil))
+																
+															collect (funcall rotacion pieza) into procesadas
+															
+															if (and (not (equalp (refleja (funcall rotacion pieza)) pieza))
+																	(not (equalp (refleja (funcall rotacion pieza)) (refleja pieza)))
+																	(not (find (refleja (funcall rotacion pieza)) procesadas :test #'equalp)))
+																	
+																do (if (movimiento-valido tablero (refleja (funcall rotacion pieza)) (list i j) jugador nil)
+																       (return-from es-estado-final nil))
+																	   
+															collect (funcall rotacion pieza) into procesadas)))))))))
 		
 	t ;No hay ningun posible movimiento para ningun jugador.
 )
@@ -168,18 +186,23 @@
 		 (tablero (estado-tablero estado-sucesor)) 	 ;El tablero del estado sucesor es una copia del de estado actual.
 		 (valido t))
 		 
-		(if (movimiento-valido tablero pieza posicion jugador inicial)
-			(loop for i from 0 to (- fpieza 1) ;Recorre la pieza asociada al movimiento.
-				do (loop for j from 0 to (- cpieza 1)
-						do (setf (aref tablero (+ i tx) (+ j ty)) (* jugador (aref pieza i j))))) ;El bloque lleva el identificador del jugador.
+		(if (not (equalp pieza *pasa-turno*)) ;Si el jugador no tiene ningun movimiento valido y no es estado final pasa turno.
+		 
+			(progn (if (movimiento-valido tablero pieza posicion jugador inicial)
+					   (loop for i from 0 to (- fpieza 1) ;Recorre la pieza asociada al movimiento.
+						   do (loop for j from 0 to (- cpieza 1)
+								  do (setf (aref tablero (+ i tx) (+ j ty)) (* jugador (aref pieza i j))))) ;El bloque lleva el identificador del jugador.
 					  
-			(setf valido nil))
+						(setf valido nil))
 		
-		(if (not valido)
-			'no-aplicable
-			(progn (setf (gethash jugador (estado-jugadores estado-sucesor)) 
-						 (remove pieza (gethash jugador (estado-jugadores estado-sucesor))))
-					estado-sucesor)))
+				   (if (not valido)
+					   (return-from aplica-movimiento 'no-aplicable)
+					   (setf (gethash jugador (estado-jugadores estado-sucesor)) (remove pieza (gethash jugador (estado-jugadores estado-sucesor))))))
+					   
+			(if (es-estado-final estado-actual)
+				(return-from aplica-movimiento 'no-aplicable)))
+		
+		estado-sucesor) ;Estado sucesor resultado de aplicar un movimiento valido.
 )
     
 (defun evaluacion-estatica (estado-actual turno-actual)
@@ -197,7 +220,7 @@
 )
 
 (defun movimientos (estado-actual turno-actual)
-	"devuelve la lista de posibles movimientos dado un estado del juego"
+	"devuelve la lista de posibles movimientos dado un estado del juego y el turno de movimiento"
 	(let ((piezas-jugador (gethash turno-actual (estado-jugadores estado-actual)))
 		  (ftablero (first dim-tablero)) (ctablero (first dim-tablero)))
 		  
@@ -322,8 +345,11 @@
 											finally (return mj))
 								 
 							  into movimientos-jugador
-			  
-							  finally (return movimientos-jugador))))))						           			  
+							  
+							  finally (if (= (length movimientos-jugador) 0)
+										     (return (list (construye-movimiento *pasa-turno* (list 1 1) turno-actual nil)))
+											 (return movimientos-jugador)))))))
+											 				           			  
 )
 
 ; Funciones auxiliares
@@ -356,6 +382,19 @@
 		  
 		  ((eq pieza I1) 1)) 																	       ;Pieza de 1 bloque.
 		  
+)
+
+(defun posicion-inicial (pieza jugador)
+	"devuelve la posicion inicial para el jugador dado en funcion de la pieza dada"
+	(let* ((dim-pieza (array-dimensions pieza))
+		   (fpieza (first dim-pieza)) (cpieza (second dim-pieza))
+		   (ftablero (first dim-tablero)) (ctablero (second dim-tablero)))
+		   
+		   (cond ((= jugador 1) (list 1 1))
+				 ((= jugador 2) (list 1 (- ctablero (- cpieza 1))))
+				 ((= jugador 3) (list (- ftablero (- fpieza 1)) 1))
+				 ((= jugador 4) (list (- ftablero (- fpieza 1)) (- ctablero (- cpieza 1))))))
+				 
 )		  
 
 (defun rota90 (pieza)
@@ -462,7 +501,7 @@
 							
 				 ((= jugador 3) 
 					(if (and (= tx (- ftablero fpieza)) (= ty 0) 
-							 (not (eq (aref pieza (- fpieza 1)) 0)) 
+							 (not (eq (aref pieza (- fpieza 1) 0) 0)) 
 							 (eq (aref tablero (- ftablero 1) 0) 0))
 								t 
 								nil))
@@ -474,19 +513,6 @@
 								t
 								nil))))	
 						
-)
-
-(defun posicion-inicial (pieza jugador)
-	"devuelve la posicion inicial para el jugador dado en funcion de la pieza dada"
-	(let* ((dim-pieza (array-dimensions pieza))
-		   (fpieza (first dim-pieza)) (cpieza (second dim-pieza))
-		   (ftablero (first dim-tablero)) (ctablero (second dim-tablero)))
-		   
-		   (cond ((= jugador 1) (list 1 1))
-				 ((= jugador 2) (list 1 (- ctablero (- cpieza 1))))
-				 ((= jugador 3) (list (- ftablero (- fpieza 1)) 1))
-				 ((= jugador 4) (list (- ftablero (- fpieza 1)) (- ctablero (- cpieza 1))))))
-				 
 )
 
 (defun fuera-del-tablero (fila columna)

@@ -51,6 +51,11 @@
            collect 0)
 )
 
+(defun movimientos (estado-actual turno-actual)
+	"devuelve la lista de posibles movimientos dado un estado del juego y el turno de movimiento"
+	*movimientos*
+)
+
 ;Funciones que realizan las operaciones asociadas a los movimientos del juego
 
 (defun quitar-uno (estado-actual)
