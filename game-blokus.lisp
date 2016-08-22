@@ -27,29 +27,36 @@
 
 ;Datos de las piezas del juego.
 
-(defconstant O4 (make-array '(2 2) :initial-contents '((1 1) (1 1))))
-(defconstant T4 (make-array '(2 3) :initial-contents '((1 1 1) (0 1 0))))
-(defconstant L4 (make-array '(3 2) :initial-contents '((1 0) (1 0) (1 1))))
-(defconstant Z5 (make-array '(3 3) :initial-contents '((1 1 0) (0 1 0) (0 1 1))))
+
+
+(defconstant Z5 (make-array '(3 3) :initial-contents '((1 1 0) (0 1 0) (0 1 1)))) ;Piezas de 5 bloques.
 (defconstant L5 (make-array '(4 2) :initial-contents '((1 0) (1 0) (1 0) (1 1))))
 (defconstant Y5 (make-array '(4 2) :initial-contents '((1 0) (1 1) (1 0) (1 0))))
 (defconstant N5 (make-array '(4 2) :initial-contents '((1 0) (1 0) (1 1) (0 1))))
 (defconstant P5 (make-array '(3 2) :initial-contents '((1 1) (1 1) (1 0))))
-(defconstant Z4 (make-array '(2 3) :initial-contents '((1 1 0) (0 1 1))))
-(defconstant V3 (make-array '(2 2) :initial-contents '((1 0) (1 1))))
-(defconstant U5 (make-array '(2 3) :initial-contents '((1 0 1) (1 1 1))))
-(defconstant V5 (make-array '(3 3) :initial-contents '((1 0 0) (1 0 0) (1 1 1))))
-(defconstant W5 (make-array '(3 3) :initial-contents '((1 0 0) (1 1 0) (0 1 1))))
-(defconstant I1 (make-array '(1 1) :initial-contents '((1))))
-(defconstant I2 (make-array '(2 1) :initial-contents '((1) (1))))
-(defconstant I3 (make-array '(3 1) :initial-contents '((1) (1) (1))))
-(defconstant I4 (make-array '(4 1) :initial-contents '((1) (1) (1) (1))))
 (defconstant I5 (make-array '(5 1) :initial-contents '((1) (1) (1) (1) (1))))
 (defconstant T5 (make-array '(3 3) :initial-contents '((1 1 1) (0 1 0) (0 1 0))))
 (defconstant F5 (make-array '(3 3) :initial-contents '((0 1 1) (1 1 0) (0 1 0))))
 (defconstant X5 (make-array '(3 3) :initial-contents '((0 1 0) (1 1 1) (0 1 0))))
+(defconstant U5 (make-array '(2 3) :initial-contents '((1 0 1) (1 1 1))))
+(defconstant V5 (make-array '(3 3) :initial-contents '((1 0 0) (1 0 0) (1 1 1))))
+(defconstant W5 (make-array '(3 3) :initial-contents '((1 0 0) (1 1 0) (0 1 1))))
 
-(defconstant piezas (list O4 T4 L4 Z5 L5 Y5 N5 P5 Z4 V3 U5 V5 W5 I1 I2 I3 I4 I5 T5 F5 X5))
+(defconstant Z4 (make-array '(2 3) :initial-contents '((1 1 0) (0 1 1)))) 		  ;Piezas de 4 bloques.
+(defconstant O4 (make-array '(2 2) :initial-contents '((1 1) (1 1))))
+(defconstant T4 (make-array '(2 3) :initial-contents '((1 1 1) (0 1 0))))
+(defconstant L4 (make-array '(3 2) :initial-contents '((1 0) (1 0) (1 1))))
+(defconstant I4 (make-array '(4 1) :initial-contents '((1) (1) (1) (1))))
+
+(defconstant V3 (make-array '(2 2) :initial-contents '((1 0) (1 1))))			  ;Piezas de 3 bloques.
+(defconstant I3 (make-array '(3 1) :initial-contents '((1) (1) (1))))
+
+(defconstant I2 (make-array '(2 1) :initial-contents '((1) (1))))				  ;Piezas de 2 bloques.
+
+(defconstant I1 (make-array '(1 1) :initial-contents '((1))))					  ;Pieza de 1 bloque.
+
+
+(defconstant piezas (list Z5 L5 Y5 N5 P5 I5 T5 F5 X5 U5 V5 W5 Z4 O4 T4 L4 I4 V3 I3 I2 I1))
 
 ;Datos de los jugadores.
 
@@ -67,7 +74,7 @@
 ;Definicion de variables.
 
 (defvar *minimo-valor* 0)
-(defvar *maximo-valor* 356)
+(defvar *maximo-valor* 109)   ;89 bloques mas un maximo de 20 puntos adicionales.
 (defvar *numero-jugadores* 4) ;Juego de 2 a 4 jugadores
 (defvar *estado-inicial* (make-estado))
 
@@ -79,6 +86,15 @@
 
 (loop for j from 1 to *numero-jugadores*
 	do (setf (gethash j (estado-jugadores *estado-inicial*)) piezas))
+	
+(defvar *maxima-suma* (+ (* 89 *numero-jugadores*) 20)) ; Maxima suma del vector de puntuaciones para la poda superficial.
+
+;Segun lo expuesto en el recurso R4, si en el juego no se cumple la desigualdad (maxima-suma < 2 * maximo-valor) no se lleva a cabo la poda superficial
+; y solo podría hacer por tanto, poda inmediata. 
+;
+;R4. Sturtevant, N., Korf, R.: On Pruning Techniques for Multi-Player Games. In: AAAI 2000, pp. 201-207 (2000).
+;
+;Para Blokus la desigualdad solo se cumple en el caso de 2 jugadores (198 < 218). Con 3 jugadores (287 < 218) y 4 jugadores (376 < 218).
 
 ;Funciones de acceso.
 
@@ -176,32 +192,29 @@
 (defun aplica-movimiento (movimiento estado-actual)
 	"genera el estado sucesor para cada posible movimiento del juego"
 	(let* ((pieza (movimiento-pieza movimiento))
-		 (posicion (movimiento-posicion movimiento)) ;Posicion del tablero en la que se coloca la pieza.
-		 (jugador (movimiento-jugador movimiento))   ;Identifica al jugador que hace el movimiento.
-		 (inicial (movimiento-inicial movimiento))	 ;Indica si el movimiento es inicial.
-		 (dim-pieza (array-dimensions pieza))
-		 (fpieza (first dim-pieza)) (cpieza (second dim-pieza))
-		 (tx (- (first posicion) 1)) (ty (- (second posicion) 1))
-		 (estado-sucesor (copia-estado estado-actual))
-		 (tablero (estado-tablero estado-sucesor)) 	 ;El tablero del estado sucesor es una copia del de estado actual.
-		 (valido t))
+		   (posicion (movimiento-posicion movimiento)) ;Posicion del tablero en la que se coloca la pieza.
+		   (jugador (movimiento-jugador movimiento))   ;Identifica al jugador que hace el movimiento.
+		   (inicial (movimiento-inicial movimiento))	 ;Indica si el movimiento es inicial.
+		   (dim-pieza (array-dimensions pieza))
+		   (fpieza (first dim-pieza)) (cpieza (second dim-pieza))
+		   (tx (- (first posicion) 1)) (ty (- (second posicion) 1))
+		   (estado-sucesor (copia-estado estado-actual))
+		   (tablero (estado-tablero estado-sucesor)) 	 ;El tablero del estado sucesor es una copia del de estado actual.
+		   (valido t))
 		 
-		(if (not (equalp pieza *pasa-turno*)) ;Si el jugador no tiene ningun movimiento valido y no es estado final pasa turno.
 		 
-			(progn (if (movimiento-valido tablero pieza posicion jugador inicial)
-					   (loop for i from 0 to (- fpieza 1) ;Recorre la pieza asociada al movimiento.
-						   do (loop for j from 0 to (- cpieza 1)
-								  do (setf (aref tablero (+ i tx) (+ j ty)) (* jugador (aref pieza i j))))) ;El bloque lleva el identificador del jugador.
-					  
-						(setf valido nil))
-		
-				   (if (not valido)
-					   (return-from aplica-movimiento 'no-aplicable)
-					   (setf (gethash jugador (estado-jugadores estado-sucesor)) (remove pieza (gethash jugador (estado-jugadores estado-sucesor))))))
+		  (if (movimiento-valido tablero pieza posicion jugador inicial)
+				   (loop for i from 0 to (- fpieza 1) ;Recorre la pieza asociada al movimiento.
+					   do (loop for j from 0 to (- cpieza 1)
+							  do (setf (aref tablero (+ i tx) (+ j ty)) (* jugador (aref pieza i j))))) ;El bloque lleva el identificador del jugador.
+				  
+					(setf valido nil))
+	
+		  (if (not valido)
+			  (return-from aplica-movimiento 'no-aplicable)
+			  (setf (gethash jugador (estado-jugadores estado-sucesor)) (remove pieza (gethash jugador (estado-jugadores estado-sucesor)))))
 					   
-			(if (es-estado-final estado-actual)
-				(return-from aplica-movimiento 'no-aplicable)))
-		
+					   
 		estado-sucesor) ;Estado sucesor resultado de aplicar un movimiento valido.
 )
     
@@ -221,137 +234,69 @@
 
 (defun movimientos (estado-actual turno-actual)
 	"devuelve la lista de posibles movimientos dado un estado del juego y el turno de movimiento"
-	(let ((piezas-jugador (gethash turno-actual (estado-jugadores estado-actual)))
-		  (ftablero (first dim-tablero)) (ctablero (first dim-tablero)))
+	(let ((piezas-jugador (gethash turno-actual (estado-jugadores estado-actual))))
 		  
-		 (if (= (length piezas-jugador) 21) ; Se trata del movimiento inicial. Comprueba repeticiones y validez.
-			 (loop for pieza in piezas-jugador
-				 if (and (equalp pieza (refleja pieza)) (inicial-valido pieza
-																	  (estado-tablero estado-actual)
-																	  (- (first (posicion-inicial pieza turno-actual)) 1)
-																	  (- (second (posicion-inicial pieza turno-actual)) 1)
-																	   turno-actual))			 
-																	   
-					 collect (construye-movimiento pieza (posicion-inicial pieza turno-actual) turno-actual t) into movimientos-jugador
-					 
-				 if (and (not (equalp pieza (refleja pieza))) (inicial-valido pieza
-																	  (estado-tablero estado-actual)
-																	  (- (first (posicion-inicial pieza turno-actual)) 1)
-																	  (- (second (posicion-inicial pieza turno-actual)) 1)
-																	   turno-actual)
-
-															  (inicial-valido (refleja pieza)
-																	  (estado-tablero estado-actual)
-																	  (- (first (posicion-inicial pieza turno-actual)) 1)
-																	  (- (second (posicion-inicial pieza turno-actual)) 1)
-																	   turno-actual))
-																	   
-					 append (list (construye-movimiento pieza (posicion-inicial pieza turno-actual) turno-actual t)
-					              (construye-movimiento (refleja pieza) (posicion-inicial pieza turno-actual) turno-actual t)) into movimientos-jugador
-				  
-				 append (loop for rotacion in *rotaciones*
-					        if (and (not (find (construye-movimiento (funcall rotacion pieza) 
-																     (posicion-inicial pieza turno-actual) turno-actual t)					 
-												movimientos-jugador :test #'equalp))
-																  
-							        (not (find (construye-movimiento (funcall rotacion pieza) 
-																     (posicion-inicial pieza turno-actual) turno-actual t)																	 
-												mj :test #'equalp))
-												
-									(inicial-valido (funcall rotacion pieza)
-													(estado-tablero estado-actual)
-													(- (first (posicion-inicial pieza turno-actual)) 1)
-													(- (second (posicion-inicial pieza turno-actual)) 1)
-													turno-actual))
-											
-						        collect (construye-movimiento (funcall rotacion pieza) 
-								                              (posicion-inicial pieza turno-actual) turno-actual t) into mj
-						  
-					        if (and (not (find (construye-movimiento (refleja (funcall rotacion pieza)) 
-							                                         (posicion-inicial pieza turno-actual) turno-actual t)
-											    movimientos-jugador :test #'equalp))
-																  
-									(not (find (construye-movimiento (refleja (funcall rotacion pieza)) 
-							                                     (posicion-inicial pieza turno-actual) turno-actual t)
-										        mj :test #'equalp))
-												
-									(inicial-valido (refleja (funcall rotacion pieza))
-													(estado-tablero estado-actual)
-													(- (first (posicion-inicial pieza turno-actual)) 1)
-													(- (second (posicion-inicial pieza turno-actual)) 1)
-													turno-actual))
-											
-						        collect (construye-movimiento (refleja (funcall rotacion pieza)) 
-								                              (posicion-inicial pieza turno-actual) turno-actual t) into mj
-															   
-							finally (return mj))
-								 
-				 into movimientos-jugador
-			  
-				 finally (return movimientos-jugador))
-				 
-				 
-			 (loop for pieza in piezas-jugador ;No se trata de un movimiento inicial.
-				append (loop for i from 1 to ftablero
-					   append (loop for j from 1 to ctablero
-							  if (and (equalp pieza (refleja pieza)) (movimiento-valido 
-																	     (estado-tablero estado-actual)
-																		  pieza
-																	     (list i j)
-																	      turno-actual
-																		  nil))
-																	   
-								  collect (construye-movimiento pieza (list i j) turno-actual nil) into movimientos-jugador
-								  
-							  if (and (not (equalp pieza (refleja pieza))) (movimiento-valido
-																		 (estado-tablero estado-actual)
-																		  pieza
-																	     (list i j)
-																		  turno-actual
-																		  nil)
-
-																		   (movimiento-valido
-																	     (estado-tablero estado-actual)
-																		 (refleja pieza)
-																	     (list i j)
-																	      turno-actual
-																		  nil))
+		 ;Se generaran los movimientos en funcion del numero del movimiento. Por ejemplo, para el primer movimiento solo tiene sentido
+		 ; generar los movimientos posibles para la posicion inicial correspondiente al jugador. En los movimientos siguientes
+		 ; solo se generan movimientos para una seccion del tablero dependiendo del jugador que mueve, evitando generar movimientos para 400 posiciones
+		 ; en todos los casos, cuando puede que solo haya movimientos posibles en 100 posiciones del tablero. Una vez que se llega al sexto movimiento 
+		 ; ya es necesario generar movimientos posibles para las 400 posiciones, pero en este caso el numero de piezas se ve reducido de manera que
+		 ; se reducen igualmente el numero de movimientos posibles.
+		 ;
+		 ;El objetivo es mejorar, aunque sea levemente, el tiempo de ejecucion de los algoritmos.
+		 
+		 (case (length piezas-jugador) 
 			
-								  append (list (construye-movimiento pieza (list i j) turno-actual nil)
-					             (construye-movimiento (refleja pieza) (list i j) turno-actual nil)) into movimientos-jugador
-								 
-							  append (loop for rotacion in *rotaciones*
-										if (and (not (find (construye-movimiento (funcall rotacion pieza) (list i j) turno-actual nil)					 
-															movimientos-jugador :test #'equalp))
-																  
-												(not (find (construye-movimiento (funcall rotacion pieza) (list i j) turno-actual nil)																	 
-															mj :test #'equalp))
-												
-												(movimiento-valido (estado-tablero estado-actual) (funcall rotacion pieza) (list i j) turno-actual nil))
-											
-											collect (construye-movimiento (funcall rotacion pieza) (list i j) turno-actual nil) into mj
-						  
-										if (and (not (find (construye-movimiento (refleja (funcall rotacion pieza)) (list i j) turno-actual nil)
-															movimientos-jugador :test #'equalp))
-																  
-												(not (find (construye-movimiento (refleja (funcall rotacion pieza)) (list i j) turno-actual nil)
-															mj :test #'equalp))
-												
-												(movimiento-valido (estado-tablero estado-actual) (refleja (funcall rotacion pieza)) 
-																   (list i j) turno-actual nil))
-											
-											collect (construye-movimiento (refleja (funcall rotacion pieza)) (list i j) turno-actual nil) into mj
-															   
-											finally (return mj))
-								 
-							  into movimientos-jugador
-							  
-							  finally (if (= (length movimientos-jugador) 0)
-										     (return (list (construye-movimiento *pasa-turno* (list 1 1) turno-actual nil)))
-											 (return movimientos-jugador)))))))
-											 				           			  
+			(21 (loop for pieza in (genera-piezas piezas-jugador) ;Se trata del movimiento inicial (1).
+				  collect (construye-movimiento pieza (posicion-inicial pieza turno-actual) turno-actual t)))
+				  
+				  
+			(20 (let* ((tp (tablero-parcial turno-actual 2)) 	  ;Se trata del segundo movimiento (2).
+					   (pinicial (first tp)) (longitud-tp (second tp)))
+			
+					  (loop for pieza in (genera-piezas piezas-jugador) 
+						append (loop for i from (first pinicial) to (+ (first pinicial) (1- longitud-tp))
+						  append (loop for j from (second pinicial) to (+ (second pinicial) (1- longitud-tp))
+							collect (construye-movimiento pieza (list i j) turno-actual nil))))))
+							
+							
+			(19 (let* ((tp (tablero-parcial turno-actual 3)) 	  ;Se trata del segundo movimiento (3).
+					   (pinicial (first tp)) (longitud-tp (second tp)))
+			
+					  (loop for pieza in (genera-piezas piezas-jugador) 
+						append (loop for i from (first pinicial) to (+ (first pinicial) (1- longitud-tp))
+						  append (loop for j from (second pinicial) to (+ (second pinicial) (1- longitud-tp))
+							collect (construye-movimiento pieza (list i j) turno-actual nil))))))
+							
+							
+			(18 (let* ((tp (tablero-parcial turno-actual 4)) 	  ;Se trata del segundo movimiento (4).
+					   (pinicial (first tp)) (longitud-tp (second tp)))
+			
+					  (loop for pieza in (genera-piezas piezas-jugador) 
+						append (loop for i from (first pinicial) to (+ (first pinicial) (1- longitud-tp))
+						  append (loop for j from (second pinicial) to (+ (second pinicial) (1- longitud-tp))
+							collect (construye-movimiento pieza (list i j) turno-actual nil))))))
+							
+							
+			(17 (let* ((tp (tablero-parcial turno-actual 5)) 	  ;Se trata del segundo movimiento (5).
+					   (pinicial (first tp)) (longitud-tp (second tp)))
+			
+					  (loop for pieza in (genera-piezas piezas-jugador) 
+						append (loop for i from (first pinicial) to (+ (first pinicial) (1- longitud-tp))
+						  append (loop for j from (second pinicial) to (+ (second pinicial) (1- longitud-tp))
+							collect (construye-movimiento pieza (list i j) turno-actual nil))))))
+							
+							
+			(t (let* ((tp (tablero-parcial turno-actual 6)) 	  ;Se trata del sexto movimiento en adelante (6+).
+					   (pinicial (first tp)) (longitud-tp (second tp)))
+			
+					  (loop for pieza in (genera-piezas piezas-jugador) 
+						append (loop for i from (first pinicial) to longitud-tp
+						  append (loop for j from (second pinicial) to longitud-tp
+							collect (construye-movimiento pieza (list i j) turno-actual nil))))))))
+						
 )
-
+					  					 
 ; Funciones auxiliares
 
 (defun construye-nodo (estado-actual turno-actual)
@@ -382,20 +327,100 @@
 		  
 		  ((eq pieza I1) 1)) 																	       ;Pieza de 1 bloque.
 		  
+)	
+
+(defun genera-piezas (piezas-jugador)
+	"devuelva una lista con todas las piezas del jugador con sus respectivas rotaciones y reflejos sin repetir ninguna"
+	(loop for pieza in piezas-jugador
+						  
+	  if (equalp pieza (refleja pieza))
+													  
+		  collect pieza into piezas-movimiento
+					
+	  else
+																
+		  append (list pieza (refleja pieza)) into piezas-movimiento
+					
+						
+	if (not (find (rota90 pieza) piezas-movimiento :test #'equalp))
+				
+		collect (rota90 pieza) into piezas-movimiento
+					
+	if (not (find (refleja (rota90 pieza)) piezas-movimiento :test #'equalp))
+				
+		collect (refleja (rota90 pieza)) into piezas-movimiento
+					
+					
+					
+	if (not (find (rota180 pieza) piezas-movimiento :test #'equalp))
+				
+		collect (rota180 pieza) into piezas-movimiento
+					
+	if (not (find (refleja (rota180 pieza)) piezas-movimiento :test #'equalp))
+				
+		collect (refleja (rota180 pieza)) into piezas-movimiento
+					
+					
+					
+	if (not (find (rota270 pieza) piezas-movimiento :test #'equalp))
+				
+		collect (rota270 pieza) into piezas-movimiento
+					
+	if (not (find (refleja (rota270 pieza)) piezas-movimiento :test #'equalp))
+				
+		collect (refleja (rota270 pieza)) into piezas-movimiento
+						   
+	finally (return piezas-movimiento))
+	
 )
 
-(defun posicion-inicial (pieza jugador)
-	"devuelve la posicion inicial para el jugador dado en funcion de la pieza dada"
-	(let* ((dim-pieza (array-dimensions pieza))
-		   (fpieza (first dim-pieza)) (cpieza (second dim-pieza))
-		   (ftablero (first dim-tablero)) (ctablero (second dim-tablero)))
-		   
-		   (cond ((= jugador 1) (list 1 1))
-				 ((= jugador 2) (list 1 (- ctablero (- cpieza 1))))
-				 ((= jugador 3) (list (- ftablero (- fpieza 1)) 1))
-				 ((= jugador 4) (list (- ftablero (- fpieza 1)) (- ctablero (- cpieza 1))))))
-				 
-)		  
+(defun tablero-parcial (jugador numero-movimiento)
+	"devuelve la coordenada inicial y la longitud que define un subtablero contenido dentro del tablero del juego, 
+		dependiendo del jugador y del numero de movimiento"
+	
+	;Los subtableros vienen determinados por el caso en el que se usara la pieza de mayor longitud en cuanto a anchura y altura. Considerando por ejemplo,
+	; que la pieza I5 tiene unas dimensiones de 5x5 pues puede ser colocada en posiciones vertical u horizontal.
+	;
+	;Por ejemplo, en el caso del segundo movimiento
+	;suponemos que se usa I5, por tanto las posibles posiciones para una nueva pieza como mucho se encontraran en el subtablero que contiene esa pieza
+	; mas un bloque adiciona, por tanto se usaria el subtablero de 6x6 que empieza en (1, 1) y termina en (6, 6).
+	;
+	;En el resto de casos, teniendo en cuenta que en el set de piezas solo existe una de longitud 5 y 4 de 4 (el resto no son necesarias pues a partir
+	;	del sexto movimiento se considera el tablero completo), se supone que se usan piezas de longitud 4 para determinar el subtablero.
+	
+	(let ((ftablero (first dim-tablero)) (ctablero (second dim-tablero))
+		  (longitudes (list 6 10 14 18 20))) ;Longitudes de los subtableros.
+	
+	(case jugador
+		(1 (case numero-movimiento 
+				(2	(list '(1 1) (first longitudes))) 	;Longitud de la pieza mas grande, 5, mas 1 bloque adicional.
+				(3  (list '(1 1) (second longitudes)))	;Longitud de la pieza mas grande mas la siguiente mas grande, que es de 4, mas un bloque adicional.
+				(4	(list '(1 1) (third longitudes)))
+				(5  (list '(1 1) (fourth longitudes)))
+				(6	(list '(1 1) (fifth longitudes))))) ;Llegados a este punto el limite es 20.
+		
+		(2 (case numero-movimiento 
+				(2  (list (list 1 (- ctablero (1- (first longitudes))))  (first longitudes)))
+				(3	(list (list 1 (- ctablero (1- (second longitudes)))) (second longitudes)))
+				(4	(list (list 1 (- ctablero (1- (third longitudes))))  (third longitudes))) 
+				(5	(list (list 1 (- ctablero (1- (fourth longitudes)))) (fourth longitudes)))
+				(6	(list (list 1 (- ctablero (1- (fifth longitudes))))  (fifth longitudes)))))
+				
+		(3 (case numero-movimiento 
+				(2  (list (list (- ftablero (1- (first longitudes)))  1) (first longitudes)))
+				(3	(list (list (- ftablero (1- (second longitudes))) 1) (second longitudes)))
+				(4	(list (list (- ftablero (1- (third longitudes)))  1) (third longitudes))) 
+				(5	(list (list (- ftablero (1- (fourth longitudes))) 1) (fourth longitudes)))
+				(6	(list (list (- ftablero (1- (fifth longitudes)))  1) (fifth longitudes)))))
+				
+		(4 (case numero-movimiento 
+				(2  (list (list (- ftablero (1- (first longitudes)))  (- ctablero (1- (first longitudes))))  (first longitudes)))
+				(3	(list (list (- ftablero (1- (second longitudes))) (- ctablero (1- (second longitudes)))) (second longitudes)))
+				(4	(list (list (- ftablero (1- (third longitudes)))  (- ctablero (1- (third longitudes))))  (third longitudes))) 
+				(5	(list (list (- ftablero (1- (fourth longitudes))) (- ctablero (1- (fourth longitudes)))) (fourth longitudes)))
+				(6	(list (list (- ftablero (1- (fifth longitudes)))  (- ctablero (1- (fifth longitudes))))  (fifth longitudes)))))))
+				
+)
 
 (defun rota90 (pieza)
 	"rota 90 grados la pieza dada"
@@ -483,37 +508,36 @@
 	"determina si el movimiento inicial para el jugador y las coordenadas dadas es valido"
 	(let* ((dim-pieza (array-dimensions pieza))
 		   (fpieza (first dim-pieza)) (cpieza (second dim-pieza))
+		   (pinicial (posicion-inicial pieza jugador)) ;Posicion inicial en el tablero.
+		   (pinicialx (1- (first pinicial))) (pinicialy (1- (second pinicial))))
+		   
+		  (if (and (= tx pinicialx) (= ty pinicialy) 		   ;Los valores de la posicion dada corresponden con la posicion inicial del jugador.
+					(eq (aref tablero pinicialx pinicialy) 0)) ;El movimiento inicial no se ha llevado a cabo todavia, la casilla esta vacia.
+		   
+			  (case jugador (1 (if (not (eq (aref pieza 0 0) 0)) (return-from inicial-valido t)))	;La pieza tiene un bloque para la casilla inicial.
+									  
+							(2 (if (not (eq (aref pieza 0 (1- cpieza)) 0)) (return-from inicial-valido t)))
+	  
+							(3 (if (not (eq (aref pieza (1- fpieza) 0) 0)) (return-from inicial-valido t)))
+		   
+							(4 (if (not (eq (aref pieza (1- fpieza) (1- cpieza)) 0)) (return-from inicial-valido t)))))
+							
+	nil)
+	
+)
+
+(defun posicion-inicial (pieza jugador)
+	"devuelve la posicion inicial para el jugador dado en funcion de la pieza dada"
+	(let* ((dim-pieza (array-dimensions pieza))
+		   (fpieza (first dim-pieza)) (cpieza (second dim-pieza))
 		   (ftablero (first dim-tablero)) (ctablero (second dim-tablero)))
 		   
-		   (cond ((= jugador 1) 
-					(if (and (= tx 0) (= ty 0) 
-							 (not (eq (aref pieza 0 0) 0)) ;La pieza tiene un bloque para la casilla inicial.
-							 (eq (aref tablero 0 0) 0))    ;El movimiento inicial no se ha llevado a cabo todavia.
-								t 
-								nil))
-							
-				 ((= jugador 2) 
-					(if (and (= tx 0) (= ty (- ctablero cpieza)) 
-							 (not (eq (aref pieza 0 (- cpieza 1)) 0)) 
-							 (eq (aref tablero 0 (- ctablero 1)) 0)) 
-								t 
-								nil))
-							
-				 ((= jugador 3) 
-					(if (and (= tx (- ftablero fpieza)) (= ty 0) 
-							 (not (eq (aref pieza (- fpieza 1) 0) 0)) 
-							 (eq (aref tablero (- ftablero 1) 0) 0))
-								t 
-								nil))
-						
-				 ((= jugador 4) 
-					(if (and (= tx (- ftablero fpieza)) (= ty (- ctablero cpieza)) 
-							 (not (eq (aref pieza (- fpieza 1) (- cpieza 1)) 0)) 
-							 (eq (aref tablero (- ftablero 1) (- ctablero 1)) 0)) 
-								t
-								nil))))	
-						
-)
+		   (cond ((= jugador 1) (list 1 1))
+				 ((= jugador 2) (list 1 (- ctablero (1- cpieza))))
+				 ((= jugador 3) (list (- ftablero (1- fpieza)) 1))
+				 ((= jugador 4) (list (- ftablero (1- fpieza)) (- ctablero (1- cpieza))))))
+				 
+)	
 
 (defun fuera-del-tablero (fila columna)
 	"determina si la coordenada dada (fila, columna) se sale del tablero"
