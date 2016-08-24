@@ -114,24 +114,29 @@
 ; que lo realiza y un valor que determina si se trata de un movimiento inicial. El identificador del jugador sirve para que al aplicar el movimiento 
 ; los bloques queden identificados como suyos.
 
-(defun movimiento-pieza (movimiento)
-  "devuelve la pieza asociada el movimiento" ;En este punto la pieza tiene una orientacion fija.
+(defun movimiento-base (movimiento)
+  "devuelve la pieza base asociada al movimiento" ;Se trata de la pieza original.
   (first movimiento)
+)
+
+(defun movimiento-pieza (movimiento)
+  "devuelve la pieza asociada al movimiento" ;Se trata de la pieza que se usara en el movimiento, transformada o no.
+  (second movimiento)
 )
 
 (defun movimiento-posicion (movimiento)
   "devuelve la posicion del tablero asociada al movimiento" ;La posicion sobre la que se coloca la pieza.
-  (second movimiento)
+  (third movimiento)
 )
 
 (defun movimiento-jugador (movimiento)
   "devuelve el jugador asociado al movimiento" ;Necesario para identificar los bloques en el tablero.
-  (third movimiento)
+  (fourth movimiento)
 )
 
 (defun movimiento-inicial (movimiento)
   "devuelve un valor booleano que determina si se trata del movimiento inicial del jugador"
-  (fourth movimiento)
+  (fifth movimiento)
 )
 
 ;Funciones para la representación del juego
@@ -192,6 +197,7 @@
 (defun aplica-movimiento (movimiento estado-actual)
 	"genera el estado sucesor para cada posible movimiento del juego"
 	(let* ((pieza (movimiento-pieza movimiento))
+		   (pieza-base (movimiento-base movimiento))
 		   (posicion (movimiento-posicion movimiento)) ;Posicion del tablero en la que se coloca la pieza.
 		   (jugador (movimiento-jugador movimiento))   ;Identifica al jugador que hace el movimiento.
 		   (inicial (movimiento-inicial movimiento))	 ;Indica si el movimiento es inicial.
@@ -199,22 +205,20 @@
 		   (fpieza (first dim-pieza)) (cpieza (second dim-pieza))
 		   (tx (- (first posicion) 1)) (ty (- (second posicion) 1))
 		   (estado-sucesor (copia-estado estado-actual))
-		   (tablero (estado-tablero estado-sucesor)) 	 ;El tablero del estado sucesor es una copia del de estado actual.
-		   (valido t))
+		   (tablero (estado-tablero estado-sucesor))) 	 ;El tablero del estado sucesor es una copia del de estado actual.
 		 
 		 
 		  (if (movimiento-valido tablero pieza posicion jugador inicial)
-				   (loop for i from 0 to (- fpieza 1) ;Recorre la pieza asociada al movimiento.
-					   do (loop for j from 0 to (- cpieza 1)
-							  do (setf (aref tablero (+ i tx) (+ j ty)) (* jugador (aref pieza i j))))) ;El bloque lleva el identificador del jugador.
-				  
-					(setf valido nil))
-	
-		  (if (not valido)
-			  (return-from aplica-movimiento 'no-aplicable)
-			  (setf (gethash jugador (estado-jugadores estado-sucesor)) (remove pieza (gethash jugador (estado-jugadores estado-sucesor)))))
-					   
-					   
+				   (progn (loop for i from 0 to (- fpieza 1) ;Recorre la pieza asociada al movimiento.
+							do (loop for j from 0 to (- cpieza 1)
+							     do (setf (aref tablero (+ i tx) (+ j ty)) 
+									(+ (aref tablero (+ i tx) (+ j ty)) (* jugador (aref pieza i j)))))) ;El bloque lleva el identificador del jugador.
+							
+						  (setf (gethash jugador (estado-jugadores estado-sucesor)) 
+								(remove pieza-base (gethash jugador (estado-jugadores estado-sucesor)))))
+								
+				    (return-from aplica-movimiento 'no-aplicable))
+				   
 		estado-sucesor) ;Estado sucesor resultado de aplicar un movimiento valido.
 )
     
@@ -248,7 +252,7 @@
 		 (case (length piezas-jugador) 
 			
 			(21 (loop for pieza in (genera-piezas piezas-jugador) ;Se trata del movimiento inicial (1).
-				  collect (construye-movimiento pieza (posicion-inicial pieza turno-actual) turno-actual t)))
+				  collect (construye-movimiento (first pieza) (second pieza) (posicion-inicial (second pieza) turno-actual) turno-actual t)))
 				  
 				  
 			(20 (let* ((tp (tablero-parcial turno-actual 2)) 	  ;Se trata del segundo movimiento (2).
@@ -257,7 +261,7 @@
 					  (loop for pieza in (genera-piezas piezas-jugador) 
 						append (loop for i from (first pinicial) to (+ (first pinicial) (1- longitud-tp))
 						  append (loop for j from (second pinicial) to (+ (second pinicial) (1- longitud-tp))
-							collect (construye-movimiento pieza (list i j) turno-actual nil))))))
+							collect (construye-movimiento (first pieza) (second pieza) (list i j) turno-actual nil))))))
 							
 							
 			(19 (let* ((tp (tablero-parcial turno-actual 3)) 	  ;Se trata del segundo movimiento (3).
@@ -266,7 +270,7 @@
 					  (loop for pieza in (genera-piezas piezas-jugador) 
 						append (loop for i from (first pinicial) to (+ (first pinicial) (1- longitud-tp))
 						  append (loop for j from (second pinicial) to (+ (second pinicial) (1- longitud-tp))
-							collect (construye-movimiento pieza (list i j) turno-actual nil))))))
+							collect (construye-movimiento (first pieza) (second pieza) (list i j) turno-actual nil))))))
 							
 							
 			(18 (let* ((tp (tablero-parcial turno-actual 4)) 	  ;Se trata del segundo movimiento (4).
@@ -275,7 +279,7 @@
 					  (loop for pieza in (genera-piezas piezas-jugador) 
 						append (loop for i from (first pinicial) to (+ (first pinicial) (1- longitud-tp))
 						  append (loop for j from (second pinicial) to (+ (second pinicial) (1- longitud-tp))
-							collect (construye-movimiento pieza (list i j) turno-actual nil))))))
+							collect (construye-movimiento (first pieza) (second pieza) (list i j) turno-actual nil))))))
 							
 							
 			(17 (let* ((tp (tablero-parcial turno-actual 5)) 	  ;Se trata del segundo movimiento (5).
@@ -284,7 +288,7 @@
 					  (loop for pieza in (genera-piezas piezas-jugador) 
 						append (loop for i from (first pinicial) to (+ (first pinicial) (1- longitud-tp))
 						  append (loop for j from (second pinicial) to (+ (second pinicial) (1- longitud-tp))
-							collect (construye-movimiento pieza (list i j) turno-actual nil))))))
+							collect (construye-movimiento (first pieza) (second pieza) (list i j) turno-actual nil))))))
 							
 							
 			(t (let* ((tp (tablero-parcial turno-actual 6)) 	  ;Se trata del sexto movimiento en adelante (6+).
@@ -293,7 +297,7 @@
 					  (loop for pieza in (genera-piezas piezas-jugador) 
 						append (loop for i from (first pinicial) to longitud-tp
 						  append (loop for j from (second pinicial) to longitud-tp
-							collect (construye-movimiento pieza (list i j) turno-actual nil))))))))
+							collect (construye-movimiento (first pieza) (second pieza) (list i j) turno-actual nil))))))))
 						
 )
 					  					 
@@ -304,9 +308,9 @@
 	(list estado-actual turno-actual)
 )
 
-(defun construye-movimiento (pieza posicion jugador inicial)
+(defun construye-movimiento (base pieza posicion jugador inicial)
 	"crea la lista de elementos que constituye un movimiento"
-	(list pieza posicion jugador inicial)
+	(list base pieza posicion jugador inicial)
 )
 
 (defun color-jugador (jugador)
@@ -330,45 +334,48 @@
 )	
 
 (defun genera-piezas (piezas-jugador)
-	"devuelva una lista con todas las piezas del jugador con sus respectivas rotaciones y reflejos sin repetir ninguna"
+	"devuelve una lista de pares pieza base y pieza transformada evitando repeticiones de piezas transformadas"
+	;La pieza base es la pieza original del juego y la pieza transformada se trata de la pieza tal cual o de alguna transformacion suya. La pieza
+	; transformada es la que se aplica en el movimiento, la base sirve para identificarla de cara a eliminarla de la lista de piezas del jugador.
+	; En esta funcion se generan las piezas de manera que no se repitan piezas transformadas para que no se generen movimientos identicos.
 	(loop for pieza in piezas-jugador
 						  
 	  if (equalp pieza (refleja pieza))
 													  
-		  collect pieza into piezas-movimiento
+		  collect (list pieza pieza)  into piezas-movimiento
 					
 	  else
 																
-		  append (list pieza (refleja pieza)) into piezas-movimiento
+		  append (list (list pieza pieza) (list pieza (refleja pieza))) into piezas-movimiento
 					
 						
-	if (not (find (rota90 pieza) piezas-movimiento :test #'equalp))
+	if (not (find (list pieza (rota90 pieza)) piezas-movimiento :test #'equalp))
 				
-		collect (rota90 pieza) into piezas-movimiento
+		collect (list pieza (rota90 pieza)) into piezas-movimiento
 					
-	if (not (find (refleja (rota90 pieza)) piezas-movimiento :test #'equalp))
+	if (not (find (list pieza (refleja (rota90 pieza))) piezas-movimiento :test #'equalp))
 				
-		collect (refleja (rota90 pieza)) into piezas-movimiento
+		collect (list pieza (refleja (rota90 pieza))) into piezas-movimiento
 					
 					
 					
-	if (not (find (rota180 pieza) piezas-movimiento :test #'equalp))
+	if (not (find (list pieza (rota180 pieza)) piezas-movimiento :test #'equalp))
 				
-		collect (rota180 pieza) into piezas-movimiento
+		collect (list pieza (rota180 pieza)) into piezas-movimiento
 					
-	if (not (find (refleja (rota180 pieza)) piezas-movimiento :test #'equalp))
+	if (not (find (list pieza (refleja (rota180 pieza))) piezas-movimiento :test #'equalp))
 				
-		collect (refleja (rota180 pieza)) into piezas-movimiento
+		collect (list pieza (refleja (rota180 pieza))) into piezas-movimiento
 					
 					
 					
-	if (not (find (rota270 pieza) piezas-movimiento :test #'equalp))
+	if (not (find (list pieza (rota270 pieza)) piezas-movimiento :test #'equalp))
 				
-		collect (rota270 pieza) into piezas-movimiento
+		collect (list pieza (rota270 pieza)) into piezas-movimiento
 					
-	if (not (find (refleja (rota270 pieza)) piezas-movimiento :test #'equalp))
+	if (not (find (list pieza (refleja (rota270 pieza))) piezas-movimiento :test #'equalp))
 				
-		collect (refleja (rota270 pieza)) into piezas-movimiento
+		collect (list pieza (refleja (rota270 pieza))) into piezas-movimiento
 						   
 	finally (return piezas-movimiento))
 	
@@ -508,19 +515,31 @@
 	"determina si el movimiento inicial para el jugador y las coordenadas dadas es valido"
 	(let* ((dim-pieza (array-dimensions pieza))
 		   (fpieza (first dim-pieza)) (cpieza (second dim-pieza))
+		   (ftablero (first dim-tablero)) (ctablero (second dim-tablero))
 		   (pinicial (posicion-inicial pieza jugador)) ;Posicion inicial en el tablero.
 		   (pinicialx (1- (first pinicial))) (pinicialy (1- (second pinicial))))
 		   
-		  (if (and (= tx pinicialx) (= ty pinicialy) 		   ;Los valores de la posicion dada corresponden con la posicion inicial del jugador.
-					(eq (aref tablero pinicialx pinicialy) 0)) ;El movimiento inicial no se ha llevado a cabo todavia, la casilla esta vacia.
-		   
-			  (case jugador (1 (if (not (eq (aref pieza 0 0) 0)) (return-from inicial-valido t)))	;La pieza tiene un bloque para la casilla inicial.
+		  (if (and (= tx pinicialx) (= ty pinicialy)) ;Los valores de la posicion dada corresponden con la posicion inicial del jugador.
+ 
+			  (case jugador (1 (if (and (not (eq (aref pieza 0 0) 0)) ;La pieza tiene un bloque para la casilla inicial.
+										(eq (aref tablero 0 0) 0))    ;El movimiento inicial no se ha llevado a cabo todavia, la casilla esta vacia.
+
+										(return-from inicial-valido t)))	
 									  
-							(2 (if (not (eq (aref pieza 0 (1- cpieza)) 0)) (return-from inicial-valido t)))
+							(2 (if (and (not (eq (aref pieza 0 (1- cpieza)) 0))
+										(eq (aref tablero 0 (1- ctablero)) 0))							
+							
+										(return-from inicial-valido t)))
 	  
-							(3 (if (not (eq (aref pieza (1- fpieza) 0) 0)) (return-from inicial-valido t)))
+							(3 (if (and (not (eq (aref pieza (1- fpieza) 0) 0)) 
+										(eq (aref tablero (1- ftablero) 0) 0))
+							
+										(return-from inicial-valido t)))
 		   
-							(4 (if (not (eq (aref pieza (1- fpieza) (1- cpieza)) 0)) (return-from inicial-valido t)))))
+							(4 (if (and (not (eq (aref pieza (1- fpieza) (1- cpieza)) 0))
+										(eq (aref tablero (1- ftablero) (1- ctablero)) 0))
+							
+										(return-from inicial-valido t)))))
 							
 	nil)
 	

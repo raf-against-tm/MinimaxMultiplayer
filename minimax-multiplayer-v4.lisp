@@ -34,7 +34,8 @@
 		  (h-max-nodo nil))
   
 		(loop for nodo in (sucesores actual)
-		  do (let ((puntuacion (valor-movimiento nodo h-max-val (1- profundidad) (tiempo-restante tiempo instante-inicial) jugador heuristica)))
+		  do (let ((puntuacion (valor-movimiento nodo h-max-val (1- profundidad) 
+													(tiempo-restante tiempo instante-inicial) (get-universal-time) jugador heuristica)))
 		  
 				(if (>= (puntuacion-jugador puntuacion jugador) h-max-val)
 					(progn (setf h-max-val (puntuacion-jugador puntuacion jugador))
@@ -46,12 +47,15 @@
     h-max-nodo)
 )
 
-(defun valor-movimiento (nodo cota-puntos profundidad tiempo jugador-inicial heuristica)
+(defun valor-movimiento (nodo cota-puntos profundidad tiempo instante-inicial jugador-inicial heuristica)
 	"devuelve la puntuacion del nodo sucesor mejor valorado para el jugador del nodo actual"
+	
 	(if (or (es-estado-final (estado nodo)) (not (sucesores nodo)) (eq profundidad 0) (eq tiempo 0))
-		    (evaluacion-estatica (estado nodo) (turno nodo))
+			(evaluacion-estatica (estado nodo) (turno nodo))
 			
-		    (aplica-heuristica heuristica (sucesores nodo) (turno nodo) cota-puntos (1- profundidad) tiempo (get-universal-time) jugador-inicial))
+		    (aplica-heuristica heuristica (sucesores nodo) (turno nodo) cota-puntos (1- profundidad) 
+												(tiempo-restante tiempo instante-inicial) (get-universal-time) jugador-inicial))
+												
 			
 )
 
@@ -61,40 +65,32 @@
 		  (max-puntuacion nil))
 		  
         (loop for nodo in sucesores
-          do (let ((puntuacion (valor-movimiento nodo max-val profundidad (tiempo-restante tiempo instante-inicial) jugador-inicial heuristica)))
+          do (let ((puntuacion (valor-movimiento nodo max-val profundidad tiempo instante-inicial jugador-inicial heuristica)))
 		  
                  (if (>= (puntuacion-jugador puntuacion jugador) max-val)
                      (progn (setf max-val (puntuacion-jugador puntuacion jugador))
                             (setf max-puntuacion puntuacion))))
-							
-		  if (< *maxima-suma* (* 2 *maximo-valor*)) ;Poda superficial.
-			  do (if (<= (- *maxima-suma* max-val) cota-puntos)
-					 (loop-finish))
-		  else
-			  do (if (= max-val *maximo-valor*) ;Poda inmediata.
-					 (loop-finish)))
+		  
+		  if (<= (- *maxima-suma* max-val) cota-puntos) do (loop-finish)) ;Poda superficial (incluye poda inmediata en su caso).
 		   
    max-puntuacion)
    
 )
 
-(defun minimiza-puntuacion (sucesores profundidad tiempo instante-inicial jugador-inicial heuristica)
+(defun minimiza-puntuacion (sucesores cota-puntos profundidad tiempo instante-inicial jugador-inicial heuristica)
 	"devuelve la puntuacion minima de entre las puntuaciones de los nodos sucesores, para el jugador pasado como parametro"
 	(let ((min-val *maximo-valor*)
 		  (min-puntuacion nil))
 		  
         (loop for nodo in sucesores
-           do (let ((puntuacion (valor-movimiento nodo min-val profundidad (tiempo-restante tiempo instante-inicial) jugador-inicial heuristica)))
+           do (let ((puntuacion (valor-movimiento nodo cota-puntos profundidad tiempo instante-inicial jugador-inicial heuristica)))
 		   
                  (if (<= (puntuacion-jugador puntuacion jugador-inicial) min-val)
                      (progn (setf min-val (puntuacion-jugador puntuacion jugador-inicial))
                             (setf min-puntuacion puntuacion))))
 							
-		   if (= min-val *minimo-valor*) do (loop-finish)) ;Poda inmediata
-		   ;En este punto solo tiene sentido la poda inmediata pues como busca minimizar el valor del jugador inicial, salvo que se dé el caso
-           ; de que la puntuacion del jugador inicial sea minima es necesario seguir evaluando el resto de nodos por este camino con objeto
-           ; de encontrar la puntuacion menor posible.
-		   
+		   if (<= (- *maxima-suma* (puntuacion-oponentes min-puntuacion jugador-inicial)) cota-puntos) do (loop-finish)) ;Poda superficial e inmediata.
+							
    min-puntuacion)
    
 )
@@ -104,7 +100,7 @@
   (loop for movimiento in (movimientos (estado nodo) (turno nodo))
        if (not (equal (sucesor nodo movimiento) 'no-aplicable))
            collect (sucesor nodo movimiento) into lista-sucesores
-		   
+		   	   
 	   ;Si no puede aplicar ningun movimiento y el estado no es final debe pasar el turno, por tanto el sucesor es el mismo estado actual.
 	   finally (if (and (eq lista-sucesores nil) (not (es-estado-final (estado nodo))))
 				   (return (list (construye-nodo (estado nodo) (siguiente-turno (turno nodo)))))
@@ -131,10 +127,23 @@
 	
 )
 
+(defun puntuacion-oponentes (puntuacion jugador)
+	"devuelve el total de la suma de las puntuaciones de los jugadores contrarios al dado"
+	(loop for j from 1 to *numero-jugadores*
+		if (not (eq j jugador))
+			sum (puntuacion-jugador puntuacion j))
+		
+)
+
 (defun siguiente-turno (turno-actual)
 	"devuelve el identificador del jugador al que le toca mover en el siguiente turno"
 	(if (eq turno-actual *numero-jugadores*) 1 (1+ turno-actual))
 	
+)
+
+(defun anterior-turno (turno-actual)
+	"devuelve el identificador del jugador anterior al que le toca mover en el turno actual"
+	(if (eq turno-actual 1) *numero-jugadores* (1- turno-actual))
 )
 
 (defun tiempo-restante (tiempo instante-inicial)
@@ -142,7 +151,7 @@
 	(let ((trestante (- tiempo (tiempo-transcurrido instante-inicial))))
 	
 		(if (>= tiempo 0) ;Si el valor es negativo el tiempo limite esta desactivado.
-			(if (<  trestante 0) 0  trestante)
+			(if (<=  trestante 0) 0  trestante)
 			 tiempo))
 			 
 )
@@ -173,7 +182,7 @@
 	"el jugador elige su mejor jugada y piensa que el resto escogeran la peor jugada para el"
 	(if (eq jugador jugador-inicial)
 		(maximiza-puntuacion sucesores jugador cota-puntos profundidad tiempo instante-inicial jugador-inicial heuristica)
-		(minimiza-puntuacion sucesores profundidad tiempo instante-inicial jugador-inicial heuristica))
+		(minimiza-puntuacion sucesores cota-puntos profundidad tiempo instante-inicial jugador-inicial heuristica))
 		
 )
 

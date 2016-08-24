@@ -9,6 +9,7 @@
 (defvar *movimientos* '(quitar-uno quitar-dos quitar-tres))
 (defvar *minimo-valor* 0)
 (defvar *maximo-valor* 1)
+(defvar *maxima-suma* 1)
 (defvar *numero-jugadores* 3)
 
 ;Funciones de accesso a los elementos de un nodo del juego.
@@ -49,6 +50,12 @@
            collect 1
        else 
            collect 0)
+)
+
+(defun movimientos (estado-actual turno-actual)
+	"devuelve la lista de movimientos disponibles"
+	(loop for movimiento in *movimientos*
+		collect movimiento)
 )
 
 ;Funciones que realizan las operaciones asociadas a los movimientos del juego

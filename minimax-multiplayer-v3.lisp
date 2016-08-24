@@ -22,12 +22,12 @@
 (defun decision-maxn (actual profundidad tiempo) ;Para omitir la profundidad o el tiempo basta con pasar un valor negativo.
 	"devuelve el nodo sucesor correspondiente al movimiento mejor valorado para el jugador que lo invoca"
 	(let ((max-val *minimo-valor*) 
-		  (jugador (turno actual)) 
+		  (jugador (turno actual))
 		  (instante-inicial (get-universal-time))
 		  (max-nodo nil))
 		  
 		(loop for nodo in (sucesores actual)
-           do (let ((puntuacion (valor-maxn nodo max-val (1- profundidad) (tiempo-restante tiempo instante-inicial))))
+           do (let ((puntuacion (valor-maxn nodo max-val (1- profundidad) (tiempo-restante tiempo instante-inicial) (get-universal-time))))
 				 
 				 (if (>= (puntuacion-jugador puntuacion jugador) max-val)
 					 (progn (setf max-val (puntuacion-jugador puntuacion jugador))
@@ -39,12 +39,13 @@
     max-nodo)
 )
 
-(defun valor-maxn (nodo cota-puntos profundidad tiempo)
+(defun valor-maxn (nodo cota-puntos profundidad tiempo instante-inicial)
 	"devuelve la puntuacion del nodo sucesor mejor valorado para el jugador del nodo actual"
 	(if (or (es-estado-final (estado nodo)) (not (sucesores nodo)) (eq profundidad 0) (eq tiempo 0))
 		(evaluacion-estatica (estado nodo) (turno nodo))
 		
-		(maximiza-puntuacion (sucesores nodo) (turno nodo) cota-puntos (1- profundidad) tiempo (get-universal-time)))
+		(maximiza-puntuacion (sucesores nodo) (turno nodo) cota-puntos (1- profundidad) 
+										(tiempo-restante tiempo instante-inicial) (get-universal-time)))
 		
 )
 
@@ -54,18 +55,13 @@
 		  (max-puntuacion nil))
 		
 		(loop for nodo in sucesores
-          do (let ((puntuacion (valor-maxn nodo max-val profundidad (tiempo-restante tiempo instante-inicial))))
+          do (let ((puntuacion (valor-maxn nodo max-val profundidad tiempo instante-inicial)))
 		  
                  (if (>= (puntuacion-jugador puntuacion jugador) max-val)
                      (progn (setf max-val (puntuacion-jugador puntuacion jugador))
                             (setf max-puntuacion puntuacion))))
 						   
-		  if (< *maxima-suma* (* 2 *maximo-valor*)) ;Poda superficial.
-			  do (if (<= (- *maxima-suma* max-val) cota-puntos)
-					 (loop-finish))
-		  else
-			  do (if (= max-val *maximo-valor*) ;Poda inmediata.
-					 (loop-finish)))
+		  if (<= (- *maxima-suma* max-val) cota-puntos) do (loop-finish)) ;Poda superficial (incluye poda inmediata en su caso)
 		   
    max-puntuacion)
    

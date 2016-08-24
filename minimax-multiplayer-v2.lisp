@@ -21,8 +21,8 @@
 ;La poda inmediata consiste en que si un movimiento supone la maxima puntuacion *maximo-valor* para un jugador, entonces,
 ; no es neceserio evaluar el resto de nodos, pues es imposible que vaya a mejorar dicha puntuacion.
 
-;La poda superficial sigue la regla (*maxima-suma* - y <= x) siendo 'x' el maximo valor hasta el momento de un nodo padre e y el maximo valor 
-; hasta el momento del nodo hijo correspondiente a ese padre. *maxima-suma* es la suma maxima del total de las puntuaciones de todos los jugadores
+;La poda superficial sigue la regla (*maxima-suma* - y <= x) siendo 'x' el maximo valor hasta el momento del nodo padre e y el maximo valor 
+; hasta el momento del nodo hijo correspondiente a ese padre. *maxima-suma* es el total maximo de la suma de las puntuaciones de todos los jugadores
 ; en un estado concreto del juego.
 ;
 ;El objetivo de la poda superficial es la comparacion de puntuaciones maximas entre el nodo padre (jugador que mueve antes) y 
@@ -77,12 +77,7 @@
 					 (progn (setf max-val (puntuacion-jugador puntuacion jugador))
 							(setf max-puntuacion puntuacion))))
 
-		  if (< *maxima-suma* (* 2 *maximo-valor*)) ;Poda superficial.
-			  do (if (<= (- *maxima-suma* max-val) cota-puntos)
-					 (loop-finish))
-		  else
-			  do (if (= max-val *maximo-valor*) ;Poda inmediata.
-					 (loop-finish)))
+		  if (<= (- *maxima-suma* max-val) cota-puntos) do (loop-finish)) ;Poda superficial (incluye poda inmediata en su caso)
 		    
    max-puntuacion)
    
