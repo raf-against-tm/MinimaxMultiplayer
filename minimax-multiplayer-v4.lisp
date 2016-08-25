@@ -165,7 +165,8 @@
 (defun aplica-heuristica (heuristica sucesores jugador cota-puntos profundidad tiempo instante-inicial jugador-inicial)
 	"aplica la heuristica pasada como parametro y devuelve el valor correspondiente"
 	(if (eq heuristica 'jugador-aleatorio)
-		(jugador-aleatorio jugador-inicial)
+		(jugador-aleatorio)
+		
 		(funcall heuristica sucesores jugador cota-puntos profundidad tiempo instante-inicial jugador-inicial heuristica))
 		
 )
@@ -186,14 +187,8 @@
 		
 )
 
-(defun jugador-aleatorio (jugador)
-	"el jugador elige una jugada cualquiera"
-	(let ((h-val (random *maximo-valor*)))
+(defun jugador-aleatorio ()
+	"el jugador elige una jugada cualquiera"	
+	(loop for j from 1 to *numero-jugadores* collect (random *maximo-valor*))
 	
-		(loop for j from 1 to *numero-jugadores*
-		  if (eq j jugador)
-			  collect h-val
-		  else 
-			  collect 0))
-			  
 )

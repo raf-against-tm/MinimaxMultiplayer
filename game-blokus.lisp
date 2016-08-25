@@ -17,7 +17,9 @@
 ;Los posibles estados finales dependen de si algun jugador ha colocado todas sus fichas (ganador) o ningun jugador puede colocar ninguna
 ;ficha mas en el tablero (gana quien mas bloques haya colocado en el tablero).
 
-;El juego tiene un maximo de 4 jugadores y un minimo de 2 y cada jugador comienza en una esquina del tablero.
+;El juego tiene un maximo de 4 jugadores y un minimo de 2 y cada jugador comienza en una esquina del tablero. Empieza el primero (azul) en la 
+; esquina superior izquierda y continuan en el sentido de las agujas del reloj, el segundo (amarillo) en la esquina superior derecha, el tercero (rojo)
+; en la esquina inferior derecha y por ultimo el cuarto (verder) en la esquina inferior izquiera. 
 
 ;Los jugadores se identificaran con los numeros del 1 al 4. Eventualmente tienen asociado un color.
 
@@ -61,9 +63,9 @@
 ;Datos de los jugadores.
 
 (defconstant color-jugador-1 'AZ)
-(defconstant color-jugador-2 'VE)
-(defconstant color-jugador-3 'AM)
-(defconstant color-jugador-4 'RO)
+(defconstant color-jugador-2 'AM)
+(defconstant color-jugador-3 'RO)
+(defconstant color-jugador-4 'VE)
 
 ;Estructura de datos para el estado del juego.
 
@@ -398,34 +400,37 @@
 	(let ((ftablero (first dim-tablero)) (ctablero (second dim-tablero))
 		  (longitudes (list 6 10 14 18 20))) ;Longitudes de los subtableros.
 	
-	(case jugador
-		(1 (case numero-movimiento 
+		 (case jugador
+			(1 (case numero-movimiento 
 				(2	(list '(1 1) (first longitudes))) 	;Longitud de la pieza mas grande, 5, mas 1 bloque adicional.
 				(3  (list '(1 1) (second longitudes)))	;Longitud de la pieza mas grande mas la siguiente mas grande, que es de 4, mas un bloque adicional.
 				(4	(list '(1 1) (third longitudes)))
 				(5  (list '(1 1) (fourth longitudes)))
 				(6	(list '(1 1) (fifth longitudes))))) ;Llegados a este punto el limite es 20.
+					
 		
-		(2 (case numero-movimiento 
+			(2 (case numero-movimiento 
 				(2  (list (list 1 (- ctablero (1- (first longitudes))))  (first longitudes)))
 				(3	(list (list 1 (- ctablero (1- (second longitudes)))) (second longitudes)))
 				(4	(list (list 1 (- ctablero (1- (third longitudes))))  (third longitudes))) 
 				(5	(list (list 1 (- ctablero (1- (fourth longitudes)))) (fourth longitudes)))
 				(6	(list (list 1 (- ctablero (1- (fifth longitudes))))  (fifth longitudes)))))
 				
-		(3 (case numero-movimiento 
-				(2  (list (list (- ftablero (1- (first longitudes)))  1) (first longitudes)))
-				(3	(list (list (- ftablero (1- (second longitudes))) 1) (second longitudes)))
-				(4	(list (list (- ftablero (1- (third longitudes)))  1) (third longitudes))) 
-				(5	(list (list (- ftablero (1- (fourth longitudes))) 1) (fourth longitudes)))
-				(6	(list (list (- ftablero (1- (fifth longitudes)))  1) (fifth longitudes)))))
-				
-		(4 (case numero-movimiento 
+			(3 (case numero-movimiento 
 				(2  (list (list (- ftablero (1- (first longitudes)))  (- ctablero (1- (first longitudes))))  (first longitudes)))
 				(3	(list (list (- ftablero (1- (second longitudes))) (- ctablero (1- (second longitudes)))) (second longitudes)))
 				(4	(list (list (- ftablero (1- (third longitudes)))  (- ctablero (1- (third longitudes))))  (third longitudes))) 
 				(5	(list (list (- ftablero (1- (fourth longitudes))) (- ctablero (1- (fourth longitudes)))) (fourth longitudes)))
-				(6	(list (list (- ftablero (1- (fifth longitudes)))  (- ctablero (1- (fifth longitudes))))  (fifth longitudes)))))))
+				(6	(list (list (- ftablero (1- (fifth longitudes)))  (- ctablero (1- (fifth longitudes))))  (fifth longitudes)))))
+					
+			(4 (case numero-movimiento 
+				(2  (list (list (- ftablero (1- (first longitudes)))  1) (first longitudes)))
+				(3	(list (list (- ftablero (1- (second longitudes))) 1) (second longitudes)))
+				(4	(list (list (- ftablero (1- (third longitudes)))  1) (third longitudes))) 
+				(5	(list (list (- ftablero (1- (fourth longitudes))) 1) (fourth longitudes)))
+				(6	(list (list (- ftablero (1- (fifth longitudes)))  1) (fifth longitudes)))))))
+				
+
 				
 )
 
@@ -529,14 +534,14 @@
 										(eq (aref tablero 0 (1- ctablero)) 0))							
 							
 										(return-from inicial-valido t)))
-	  
-							(3 (if (and (not (eq (aref pieza (1- fpieza) 0) 0)) 
-										(eq (aref tablero (1- ftablero) 0) 0))
+										
+							(3 (if (and (not (eq (aref pieza (1- fpieza) (1- cpieza)) 0))
+										(eq (aref tablero (1- ftablero) (1- ctablero)) 0))
 							
 										(return-from inicial-valido t)))
-		   
-							(4 (if (and (not (eq (aref pieza (1- fpieza) (1- cpieza)) 0))
-										(eq (aref tablero (1- ftablero) (1- ctablero)) 0))
+	  
+							(4 (if (and (not (eq (aref pieza (1- fpieza) 0) 0)) 
+										(eq (aref tablero (1- ftablero) 0) 0))
 							
 										(return-from inicial-valido t)))))
 							
@@ -552,8 +557,8 @@
 		   
 		   (cond ((= jugador 1) (list 1 1))
 				 ((= jugador 2) (list 1 (- ctablero (1- cpieza))))
-				 ((= jugador 3) (list (- ftablero (1- fpieza)) 1))
-				 ((= jugador 4) (list (- ftablero (1- fpieza)) (- ctablero (1- cpieza))))))
+				 ((= jugador 3) (list (- ftablero (1- fpieza)) (- ctablero (1- cpieza))))
+				 ((= jugador 4) (list (- ftablero (1- fpieza)) 1))))
 				 
 )	
 
