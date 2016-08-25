@@ -212,7 +212,7 @@
 				   (progn (loop for i from 0 to (- fpieza 1) ;Recorre la pieza asociada al movimiento.
 							do (loop for j from 0 to (- cpieza 1)
 							     do (setf (aref tablero (+ i tx) (+ j ty)) 
-									(+ (aref tablero (+ i tx) (+ j ty)) (* jugador (aref pieza i j)))))) ;El bloque lleva el identificador del jugador.
+									      (+ (aref tablero (+ i tx) (+ j ty)) (* jugador (aref pieza i j)))))) ;El bloque lleva el identificador del jugador.
 							
 						  (setf (gethash jugador (estado-jugadores estado-sucesor)) 
 								(remove pieza-base (gethash jugador (estado-jugadores estado-sucesor)))))
@@ -483,32 +483,31 @@
 	(let* ((dim-pieza (array-dimensions pieza))
 		   (fpieza (first dim-pieza)) (cpieza (second dim-pieza))
 		   (tx (- (first posicion) 1)) (ty (- (second posicion) 1))
-		   (diagonal nil)	;Indica si existe algun bloque, del mismo jugador, que toque diagonalmente a uno de la pieza.
-		   (valido t))		;Indica si el movimiento es valido.
+		   (diagonal nil))
 		   
-		(if (not inicial)
+		(if inicial
+			
+			(if (not (inicial-valido pieza tablero tx ty jugador))
+				(return-from movimiento-valido nil))
+			
+		   
 			(loop for i from 0 to (- fpieza 1) ;Recorre la pieza asociada al movimiento.
 				do (loop for j from 0 to (- cpieza 1)
 						if (not (eq (aref pieza i j) 0)) ;Si la posicion contiene un 0 no es un bloque de la pieza.
-							do (if (fuera-del-tablero (+ i tx) (+ j ty))
-								   (progn (setf valido nil) (loop-finish)) ;Bloque fuera del tablero.
-								   (if (bloque-solapado tablero (+ i tx) (+ j ty)) 
-								       (progn (setf valido nil) (loop-finish)) ;Bloque solapado con uno ya colocado en el tablero.
-									   (if (bloque-contiguo tablero (+ i tx) (+ j ty) jugador) 
-								           (progn (setf valido nil) (loop-finish)) ;Bloque contiguo a otros del mismo jugador.
-								           (if (bloque-diagonal tablero (+ i tx) (+ j ty) jugador)
-									           (setf diagonal t)))))) ;Toca diagonalmente otro bloque del mismo jugador.
-				if (not valido) do (loop-finish)) ;Sale del bucle.
+							do (if (fuera-del-tablero (+ i tx) (+ j ty)) 
+								   (return-from movimiento-valido nil) 	   	   			  ;Bloque fuera del tablero.
+								   (if (bloque-solapado tablero (+ i tx) (+ j ty))
+									   (return-from movimiento-valido nil) 	   			  ;Bloque solapado con uno ya colocado en el tablero.								   
+									   (if (bloque-contiguo tablero (+ i tx) (+ j ty) jugador)
+										   (return-from movimiento-valido nil) 			  ;Bloque contiguo a otros del mismo jugador.									   
+								           (if (and (bloque-diagonal tablero (+ i tx) (+ j ty) jugador) (not diagonal))		
+											   (setf diagonal t))))))					  ;Bloque diagonal a otro del propio jugador.
+											   
+				finally (if (not diagonal) (return-from movimiento-valido nil))))
+
 			
-			(if (not (inicial-valido pieza tablero tx ty jugador))
-				(setf valido nil)))
-				
-			
-		(if (not valido) ;Hay solapamiento, bloques contiguos pertenecientes al mismo jugador o no es un movimiento inicial valido.
-			 nil
-			(if (and (not diagonal) (not inicial)) ;No hay bloques diagonales y al no ser inicial invalida el movimiento.
-				nil
-				t)))
+		t)
+		
 )
 
 (defun inicial-valido (pieza tablero tx ty jugador)
