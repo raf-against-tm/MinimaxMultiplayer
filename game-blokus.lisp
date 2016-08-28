@@ -92,7 +92,7 @@
 (defvar *maxima-suma* (+ (* 89 *numero-jugadores*) 20)) ; Maxima suma del vector de puntuaciones para la poda superficial.
 
 ;Segun lo expuesto en el recurso R4, si en el juego no se cumple la desigualdad (maxima-suma < 2 * maximo-valor) no se lleva a cabo la poda superficial
-; y solo podría hacer por tanto, poda inmediata. 
+; y solo se podría hacer poda inmediata. 
 ;
 ;R4. Sturtevant, N., Korf, R.: On Pruning Techniques for Multi-Player Games. In: AAAI 2000, pp. 201-207 (2000).
 ;
@@ -193,7 +193,7 @@
   "determina si el estado dado es ganador para el jugador dado"
   (if (and (es-estado-final estado-actual) (eq (gethash jugador (estado-jugadores estado-actual)) nil))
 	   t
-	   nil)
+	   nil); ACTUALIZARLO, PUEDE HABER MAS DE UN JUGADOR SIN PIEZAS, HAY QUE SUMAR PUNTOS.
 )
 
 (defun aplica-movimiento (movimiento estado-actual)
