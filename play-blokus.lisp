@@ -1,0 +1,1 @@
+;Entorno para jugar a Blokus.

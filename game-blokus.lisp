@@ -1,7 +1,7 @@
 ;Implementacion de BLOKUS.
 
 
-;Un estado en Blokus viene definido por una matriz que indica los bloque ocupados en el tablero principal y una tabla hash con una entrada por
+;Un estado en Blokus viene definido por una matriz que indica los bloques ocupados en el tablero principal y una tabla hash con una entrada por
 ; cada jugador. En cada entrada de la tabla hash se almacena la lista de piezas del jugador correspondiente. Cada pieza es representada por
 ; una matriz en la cual, a un bloque de la pieza le corresponde un 1 y a un hueco un 0. En la matriz que define el tablero, una casilla vacia es
 ; representada por un 0 y una casilla ocupada por un bloque es representado por el numero que identifica al jugador al que pertenece.

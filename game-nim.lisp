@@ -1,5 +1,6 @@
 ;Implementacion de NIM para multipler jugadores.
 
+
 ;La variante del NIM utilizada consiste en varios grupos de fichas (el numero de jugadores determina el numero de grupos) con un numero aleatorio
 ; de fichas en cada grupo. Cada jugador, en su turno, solo puede coger fichas de un grupo. Puede coger desde una ficha, como minimo, hasta todas las
 ; del grupo de fichas elegido. El jugador que coge la ultima ficha pierde todas sus fichas quedando con 0 y por tanto, pierde el juego. El jugador al 
