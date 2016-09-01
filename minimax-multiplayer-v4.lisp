@@ -1,12 +1,11 @@
 ;Algorimo de decision minimax extendido para aplicarlo a multiples jugadores. Renombrado en esta vesion a decide-movimiento.
 
+
 ;Para hacer uso del algoritmo se supone que ha sido cargada, previamente, la implementacion de la especificacion del juego sobre 
 ; el que se va aplicar el algoritmo. En toda especificacion, de cualquier juego, se representara cada jugador por un numero, de manera que 
 ; sea mas sencillo identificarlo y obtener su puntuacion correspondiente en el vector de puntuciones devuelto por la funcion de evaluacion estatica.
-
-;Los jugadores se identificaran siempre con numeros naturales, empezando por el 1 y hasta el numero de jugadores que corresponda segun el juego.
-
-;Dicha implementación debe incluir las siguientes variables globales:
+;
+; Dicha implementación debe incluir las siguientes variables globales:
 ;   - *minimo-valor*
 ;   - *maximo-valor*
 ;	- *maxima-suma*
@@ -24,11 +23,12 @@
 
 ;Definicion de constantes.
 
-(defconstant *heuristicas* '(jugador-egoista jugador-paranoico jugador-aleatorio))
+(defconstant HEURISTICAS '(jugador-egoista jugador-paranoico jugador-aleatorio))
 
 ;Algoritmo principal.
 
-(defun decide-movimiento (actual profundidad tiempo heuristica) ;Para omitir la profundidad o el tiempo basta con pasar un valor negativo.
+(defun decide-movimiento (actual profundidad tiempo heuristica) ;Para omitir la profundidad hay que indicar un valor negativo o cero.
+																;Para omitir el tiempo de exploracion basta con inicar un valor negativo.
 	"devuelve el nodo sucesor correspondiente al movimiento mejor valorado para el jugador que lo invoca y segun la heuristica especificada"
 	(let ((h-max-val *minimo-valor*) 
 		  (jugador (turno actual)) 

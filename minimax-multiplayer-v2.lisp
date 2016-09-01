@@ -1,12 +1,11 @@
 ;Algorimo de decision minimax extendido para aplicarlo a multiples jugadores. Renombrado como decision-maxn.
 
+
 ;Para hacer uso del algoritmo se supone que ha sido cargada, previamente, la implementacion de la especificacin del juego sobre
 ; el que se va aplicar el algoritmo. En toda especificacion de cualquier juego se representara cada jugador por un numero, de manera que,
 ; sea mas sencillo identificarlo y obtener su puntuacion correspondiente en el vector de puntuciones devuelto por la funcion de evaluacion estatica.
-
-;Los jugadores se identificaran siempre con numeros naturales, empezando por el 1 y hasta el numero de jugadores que corresponda segun el juego.
-
-;Dicha implementación debe incluir las siguientes variables globales:
+;
+; Dicha implementación debe incluir las siguientes variables globales:
 ;   - *minimo-valor*
 ;   - *maximo-valor*
 ;	- *maxima-suma*
@@ -20,19 +19,26 @@
 
 ;ESTE CODIGO CORRESPONDE A LA VERSION 2 DE MINIMAX-MULTIPLAYER, A LA QUE SE LE APLICA PODA INMEDIATA Y PODA SUPERFICIAL
 
-;La poda inmediata consiste en que si un movimiento supone la maxima puntuacion *maximo-valor* para un jugador, entonces,
+;La PODA INMEDIATA consiste en que si un movimiento supone la maxima puntuacion *maximo-valor* para un jugador, entonces,
 ; no es neceserio evaluar el resto de nodos, pues es imposible que vaya a mejorar dicha puntuacion.
 
-;La poda superficial sigue la regla (*maxima-suma* - y <= x) siendo 'x' el maximo valor hasta el momento del nodo padre e y el maximo valor 
-; hasta el momento del nodo hijo correspondiente a ese padre. *maxima-suma* es el total maximo de la suma de las puntuaciones de todos los jugadores
-; en un estado concreto del juego.
+;La PODA SUPERFICIAL sigue la regla (*maxima-suma* - y <= x) siendo 'x' el maximo valor hasta el momento del nodo padre e y el maximo valor 
+; hasta el momento del nodo hijo correspondiente a ese padre. La variable global *maxima-suma* es el valor maximo que puede alcanzar la suma de
+; las puntuaciones de todos los jugadores en un estado concreto del juego.
 ;
-;El objetivo de la poda superficial es la comparacion de puntuaciones maximas entre el nodo padre (jugador que mueve antes) y 
+;El objetivo de la poda superficial es la comparacion de la puntuacion maxima en ese instante entre el nodo padre (jugador que mueve antes) y 
 ; el nodo  hijo (jugador que mueve a continuacion) de manera que, si se cumple la regla anterior, el jugador correspondiente al nodo padre no va 
 ; a escoger el movimiento hacia ese nodo hijo luego no tiene sentido seguir evaluando nodos sucesores de ese hijo.
 ;
 ;Ademas, la poda superficial depende del tipo de puntuaciones que tenga el juego. Segun lo expuesto en el recurso R4, si en el juego no se cumple 
-; la desigualdad (maxima-suma < 2 * maximo-valor) no se lleva a cabo la poda superficial y solo podría hacer por tanto, poda inmediata.
+; la desigualdad (maxima-suma < 2 * maximo-valor) no se lleva a cabo la poda superficial y solo podría hacer por tanto, poda inmediata. Esto se debe
+; a la dependencia entre las puntuaciones entre jugadores. Es decir, en un juego en el que los puntos que consigue el jugador son puntos que pierden
+; los otros jugadores, existe una relacion que cumple la condicion anterior. Mientras que en juego en los que los puntos que consigue un jugador no
+; suponen puntos perdidos para otros, no existe una dependencia entre puntuaciones de los jugadores y por tanto no se cumple la condicion mencionada.
+;
+;Por otro lado, la poda inmediata se trata de un caso particular de la poda superficial, por lo que la implementacion de la poda superficial
+; incluye la posibilidad de poda inmediata en su caso. Esto es asi porque, en el caso de que el valor del nodo hijo consiga la maxima puntuacion,
+; el resto de nodos seran podados como si de una poda inmediata se tratara, pues siempre se cumplira la condicion de la poda superficial.
 ;
 ;R4. Sturtevant, N., Korf, R.: On Pruning Techniques for Multi-Player Games. In: AAAI 2000, pp. 201-207 (2000).
 

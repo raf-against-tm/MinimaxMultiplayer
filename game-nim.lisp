@@ -105,7 +105,7 @@
 )
 
 (defun es-estado-ganador (estado-actual turno-actual jugador)
-	"determina si el estado dado es ganador para el jugador dado"
+	"determina si el estado dado es ganador para el turno y el jugador dado"
 	(let* ((fjugadores (evaluacion-estatica estado-actual turno-actual))
 		   (fjugador (nth (1- jugador) fjugadores)))
 		   

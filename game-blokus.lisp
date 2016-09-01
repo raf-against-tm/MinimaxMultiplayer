@@ -1,4 +1,4 @@
-;Implementacion de BLOKUS.
+;Implementacion de BLOKUS. (2 a 4 jugadores)
 
 
 ;Un estado en Blokus viene definido por una matriz que indica los bloques ocupados en el tablero principal y una tabla hash con una entrada por
@@ -17,11 +17,11 @@
 ;Los posibles estados finales dependen de si algun jugador ha colocado todas sus fichas (ganador) o ningun jugador puede colocar ninguna
 ;ficha mas en el tablero (gana quien mas bloques haya colocado en el tablero).
 
-;El juego tiene un maximo de 4 jugadores y un minimo de 2 y cada jugador comienza en una esquina del tablero. Empieza el primero (azul) en la 
+;El juego tiene un maximo de 4 jugadores y un minimo de 2. Cada jugador comienza en una esquina del tablero. Empieza el primero (azul) en la 
 ; esquina superior izquierda y continuan en el sentido de las agujas del reloj, el segundo (amarillo) en la esquina superior derecha, el tercero (rojo)
 ; en la esquina inferior derecha y por ultimo el cuarto (verder) en la esquina inferior izquiera. 
 
-;Los jugadores se identificaran con los numeros del 1 al 4. Eventualmente tienen asociado un color.
+;Los jugadores se identifican con los numeros naturales del 1 al 4 y tienen asociado un color.
 
 ;Definicion de constantes.
 
@@ -58,14 +58,17 @@
 (defconstant I1 (make-array '(1 1) :initial-contents '((1))))					  ;Pieza de 1 bloque.
 
 
-(defconstant piezas (list Z5 L5 Y5 N5 P5 I5 T5 F5 X5 U5 V5 W5 Z4 O4 T4 L4 I4 V3 I3 I2 I1))
+(defconstant PIEZAS (list Z5 L5 Y5 N5 P5 I5 T5 F5 X5 U5 V5 W5 Z4 O4 T4 L4 I4 V3 I3 I2 I1))
 
 ;Datos de los jugadores.
 
-(defconstant color-jugador-1 'AZ)
-(defconstant color-jugador-2 'AM)
-(defconstant color-jugador-3 'RO)
-(defconstant color-jugador-4 'VE)
+(defconstant HUECO-VACIO	 '--) ;Indica una casilla vacia en el tablero.
+(defconstant COLOR-JUGADOR-1 'AA) ;Azul.
+(defconstant COLOR-JUGADOR-2 'LL) ;Amarillo.
+(defconstant COLOR-JUGADOR-3 'RR) ;Rojo.
+(defconstant COLOR-JUGADOR-4 'VV) ;Verde.
+
+(defconstant ROTACIONES '(rota90 rota180 rota270))
 
 ;Estructura de datos para el estado del juego.
 
@@ -77,17 +80,14 @@
 
 (defvar *minimo-valor* 0)
 (defvar *maximo-valor* 109)   ;89 bloques mas un maximo de 20 puntos adicionales.
-(defvar *numero-jugadores* 4) ;Juego de 2 a 4 jugadores
+
+;Valores temporales para las variables. Son modificados a traves del entorno de juego.
+
+(defvar *numero-jugadores* 4) 
 (defvar *estado-inicial* (make-estado))
 
-(defvar *rotaciones* '(rota90 rota180 rota270))
-(defvar *pasa-turno* (make-array '(1 1) :initial-contents '((0)))) ;Pieza especial para pasar turno si el jugador no tiene movimientos validos
-																   ; y el estado en el que se aplica no es un estado final.		
-
-;Inicializacion.
-
 (loop for j from 1 to *numero-jugadores*
-	do (setf (gethash j (estado-jugadores *estado-inicial*)) piezas))
+	do (setf (gethash j (estado-jugadores *estado-inicial*)) PIEZAS))
 	
 (defvar *maxima-suma* (+ (* 89 *numero-jugadores*) 20)) ; Maxima suma del vector de puntuaciones para la poda superficial.
 
@@ -144,56 +144,28 @@
 ;Funciones para la representación del juego
 
 (defun es-estado-final (estado-actual)
-  "determina si el estado dado es un estado final del juego"
-  (let ((tablero (estado-tablero estado-actual))
-		(ftablero (first dim-tablero)) (ctablero (second dim-tablero)))
-		
-	(loop for jugador from 1 to *numero-jugadores* ;Comprueba si hay algun jugador que haya usado todas sus piezas.
-		if (eq (gethash jugador (estado-jugadores estado-actual)) nil)
-		    do (return-from es-estado-final t))
-			
+	"determina si el estado dado es un estado final del juego"
 	(loop for jugador from 1 to *numero-jugadores* ;Comprueba que ningun jugador tiene movimientos validos.
-			if (= (length (gethash jugador (estado-jugadores estado-actual))) 21) ;Si tiene todas las piezas puede realizar el movimiento inicial.
-			    do (return-from es-estado-final nil)
-			   
-			else ;El jugador ya ha realizado el movimiento inicial.	
-				do (loop for pieza in (gethash jugador (estado-jugadores estado-actual))
-					   do (loop for i from 1 to ftablero
-						      do (loop for j from 1 to ctablero						
-									 do (if (movimiento-valido tablero pieza (list i j) jugador nil)
-											   (return-from es-estado-final nil)
-											   
-											   (progn (if (not (equalp pieza (refleja pieza)))
-														  (if (movimiento-valido tablero (refleja pieza) (list i j) jugador nil)
-															  (return-from es-estado-final nil))
-															
-														  (loop for rotacion in *rotaciones*
-															if (and (not (equalp (funcall rotacion pieza) pieza))
-																	(not (equalp (funcall rotacion pieza) (refleja pieza)))
-																	(not (find (funcall rotacion pieza) procesadas :test #'equalp)))
-																
-															    do (if (movimiento-valido tablero (funcall rotacion pieza) (list i j) jugador nil)
-																	   (return-from es-estado-final nil))
-																
-															collect (funcall rotacion pieza) into procesadas
-															
-															if (and (not (equalp (refleja (funcall rotacion pieza)) pieza))
-																	(not (equalp (refleja (funcall rotacion pieza)) (refleja pieza)))
-																	(not (find (refleja (funcall rotacion pieza)) procesadas :test #'equalp)))
-																	
-																do (if (movimiento-valido tablero (refleja (funcall rotacion pieza)) (list i j) jugador nil)
-																       (return-from es-estado-final nil))
-																	   
-															collect (funcall rotacion pieza) into procesadas)))))))))
 		
-	t ;No hay ningun posible movimiento para ningun jugador.
+		sum (numero-movimientos-validos estado-actual jugador) into numero-movimientos-posibles
+		
+		finally (return (eq numero-movimientos-posibles 0)))
+		
 )
 
-(defun es-estado-ganador (estado-actual jugador)
-  "determina si el estado dado es ganador para el jugador dado"
-  (if (and (es-estado-final estado-actual) (eq (gethash jugador (estado-jugadores estado-actual)) nil))
-	   t
-	   nil); ACTUALIZARLO, PUEDE HABER MAS DE UN JUGADOR SIN PIEZAS, HAY QUE SUMAR PUNTOS.
+(defun es-estado-ganador (estado-actual turno-actual jugador)
+	"determina si el estado dado es ganador para el turno y el jugador dado"
+	(let* ((pjugadores (evaluacion-estatica estado-actual turno-actual))
+		   (pjugador (nth (1- jugador) pjugadores)))
+		   
+		  (if (es-estado-final estado-actual)
+		   
+			  (loop for j from 1 to *numero-jugadores*
+			  
+				if (and (not (eq j jugador)) (<= pjugador (nth (1- j) pjugadores))) do (return-from es-estado-ganador nil)
+				
+				finally (return-from es-estado-ganador t))))
+				
 )
 
 (defun aplica-movimiento (movimiento estado-actual)
@@ -227,10 +199,10 @@
 (defun evaluacion-estatica (estado-actual turno-actual)
   "valora un nodo a partir del estado y el turno pertencientes al mismo"
   (loop for jugador from 1 to *numero-jugadores*
-	collect (loop for pieza in piezas
+	collect (loop for pieza in PIEZAS
 				if (not (member pieza (gethash jugador (estado-jugadores estado-actual))))
 					sum (puntuacion-pieza pieza) into resultado
-					finally (if (es-estado-ganador estado-actual jugador)
+					finally (if (eq (gethash jugador (estado-jugadores estado-actual)) nil) ;Ha puesto todas las piezas.
 								(return (+ resultado 15))
 								(if (and (eq jugador turno-actual) (= resultado 88)) ; Solo le queda por poner la pieza I1 
 																					 ;  que suma 5 puntos adicionales en ese caso.
@@ -317,7 +289,7 @@
 
 (defun color-jugador (jugador)
 	"devuelve el color asociado al jugador dado"
-	(case jugador (1 color-jugador-1) (2 color-jugador-2) (3 color-jugador-3) (4 color-jugador-4))
+	(case jugador (0 HUECO-VACIO) (1 COLOR-JUGADOR-1) (2 COLOR-JUGADOR-2) (3 COLOR-JUGADOR-3) (4 COLOR-JUGADOR-4))
 )
 
 (defun puntuacion-pieza (pieza)
@@ -481,6 +453,17 @@
 			(setf (row-major-aref copia-tablero i) (row-major-aref tablero i)))
 		
 		copia-tablero)
+)
+
+(defun numero-movimientos-validos (estado-actual jugador)
+	"devuelve el numero de movimientos validos del jugador dado en el estado actual dado"
+	(loop for movimiento in (movimientos estado-actual jugador)
+		if (movimiento-valido (estado-tablero estado-actual) 
+							  (movimiento-pieza movimiento) 
+							  (movimiento-posicion movimiento) 
+							   jugador 
+							  (movimiento-inicial movimiento))
+			sum 1)
 )
 
 (defun movimiento-valido (tablero pieza posicion jugador inicial)
