@@ -43,11 +43,15 @@
 
 (defun valor-maxn (nodo cota-puntos profundidad tiempo instante-inicial)
 	"devuelve la puntuacion del nodo sucesor mejor valorado para el jugador del nodo actual"
-	(if (or (es-estado-final (estado nodo)) (not (sucesores nodo)) (eq profundidad 0) (eq tiempo 0))
-		(evaluacion-estatica (estado nodo) (turno nodo))
+	
+	(if (or (eq profundidad 0) (eq tiempo 0))
+		(return-from valor-maxn (evaluacion-estatica (estado nodo) (turno nodo)))
 		
-		(maximiza-puntuacion (sucesores nodo) (turno nodo) cota-puntos (1- profundidad) 
-										(tiempo-restante tiempo instante-inicial) (get-universal-time)))
+		(if (or (es-estado-final (estado nodo)) (not (sucesores nodo)))
+			(return-from valor-maxn (evaluacion-estatica (estado nodo) (turno nodo)))))
+		
+	(maximiza-puntuacion (sucesores nodo) (turno nodo) cota-puntos (1- profundidad) 
+									(tiempo-restante tiempo instante-inicial) (get-universal-time))
 		
 )
 

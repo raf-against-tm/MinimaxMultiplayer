@@ -52,13 +52,24 @@
 (defun valor-movimiento (nodo cota-puntos profundidad tiempo instante-inicial jugador-inicial heuristica)
 	"devuelve la puntuacion del nodo sucesor mejor valorado para el jugador del nodo actual"
 	
-	(if (and (or (es-estado-final (estado nodo)) (not (sucesores nodo)) (eq profundidad 0) (eq tiempo 0)) 
-			 (not (eq heuristica 'jugador-aleatorio))) ;El jugador aleatorio solo tiene un nivel de profundidad y aplica su propia evaluacion.
-			 
-		(evaluacion-estatica (estado nodo) (turno nodo))
+	(if (eq heuristica 'jugador-aleatorio)
+		(return-from valor-movimiento (jugador-aleatorio)) ;El jugador aleatorio solo tiene un nivel de profundidad y aplica su propia evaluacion.
+	
+		(if (or (eq profundidad 0) (eq tiempo 0))
+		
+			(return-from valor-movimiento (evaluacion-estatica (estado nodo) (turno nodo)))
 			
-		(aplica-heuristica heuristica (sucesores nodo) (turno nodo) cota-puntos (1- profundidad) 
-												(tiempo-restante tiempo instante-inicial) (get-universal-time) jugador-inicial))
+			(if (es-estado-final (estado nodo))
+			
+				(return-from valor-movimiento (evaluacion-estatica (estado nodo) (turno nodo)))
+				
+				(if (not (sucesores nodo))
+				
+					(return-from valor-movimiento (evaluacion-estatica (estado nodo) (turno nodo)))))))
+					
+
+	(aplica-heuristica heuristica (sucesores nodo) (turno nodo) cota-puntos (1- profundidad) 
+								(tiempo-restante tiempo instante-inicial) (get-universal-time) jugador-inicial)
 														
 )
 
@@ -167,10 +178,7 @@
 
 (defun aplica-heuristica (heuristica sucesores jugador cota-puntos profundidad tiempo instante-inicial jugador-inicial)
 	"aplica la heuristica pasada como parametro y devuelve el valor correspondiente"
-	(if (eq heuristica 'jugador-aleatorio)
-		(jugador-aleatorio)
-		
-		(funcall heuristica sucesores jugador cota-puntos profundidad tiempo instante-inicial jugador-inicial heuristica))
+	(funcall heuristica sucesores jugador cota-puntos profundidad tiempo instante-inicial jugador-inicial heuristica)
 		
 )
 

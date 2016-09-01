@@ -145,9 +145,14 @@
 
 (defun es-estado-final (estado-actual)
 	"determina si el estado dado es un estado final del juego"
+	
+	
 	(loop for jugador from 1 to *numero-jugadores* ;Comprueba que ningun jugador tiene movimientos validos.
-		
-		sum (numero-movimientos-validos estado-actual jugador) into numero-movimientos-posibles
+	
+		if (> (length (gethash jugador (estado-jugadores estado-actual))) 15) ;Si se han puesto menos de 6 piezas se garantizan movimientos validos.   
+			do (return nil)
+		else	
+			sum (numero-movimientos-validos estado-actual jugador) into numero-movimientos-posibles
 		
 		finally (return (eq numero-movimientos-posibles 0)))
 		
