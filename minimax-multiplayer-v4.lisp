@@ -52,13 +52,14 @@
 (defun valor-movimiento (nodo cota-puntos profundidad tiempo instante-inicial jugador-inicial heuristica)
 	"devuelve la puntuacion del nodo sucesor mejor valorado para el jugador del nodo actual"
 	
-	(if (or (es-estado-final (estado nodo)) (not (sucesores nodo)) (eq profundidad 0) (eq tiempo 0))
-			(evaluacion-estatica (estado nodo) (turno nodo))
+	(if (and (or (es-estado-final (estado nodo)) (not (sucesores nodo)) (eq profundidad 0) (eq tiempo 0)) 
+			 (not (eq heuristica 'jugador-aleatorio))) ;El jugador aleatorio solo tiene un nivel de profundidad y aplica su propia evaluacion.
+			 
+		(evaluacion-estatica (estado nodo) (turno nodo))
 			
-		    (aplica-heuristica heuristica (sucesores nodo) (turno nodo) cota-puntos (1- profundidad) 
+		(aplica-heuristica heuristica (sucesores nodo) (turno nodo) cota-puntos (1- profundidad) 
 												(tiempo-restante tiempo instante-inicial) (get-universal-time) jugador-inicial))
-												
-			
+														
 )
 
 (defun maximiza-puntuacion (sucesores jugador cota-puntos profundidad tiempo instante-inicial jugador-inicial heuristica)
