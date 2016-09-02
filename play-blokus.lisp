@@ -13,7 +13,8 @@
 
 ;Declaracion de variables globales
 
-(defvar *tipos-jugadores* nil) ;Contendra una lista con los tipos de jugadores elegidos.
+(defvar *tipos-jugadores* nil) 	  ;Contendra una lista con los tipos de jugadores elegidos.
+(defvar *profundidad-tiempo* nil) ;Contendra una lista con el limite de profundida y tiempo de exploracion.
 
 ;Funcion principal.
 
@@ -45,7 +46,7 @@
 			   ~&  - Si ha colocado todas sus piezas suma 15 adicionales. 
 			   ~&  - Si además ha colocado en último lugar la pieza de un bloque (I1) suma 5 puntos más. ~&~%")
 			  
-		 (format t "~&  NOTAS: LA POSICIÓN INDICADA EN EL MOVIMIENTO SE CORRESPONDE CON LA ESQUINA SUPERIOR IZQUIERDA DE LA PIEZA. DEBE SER TENIDO EN~%")
+		 (format t "~&  AVISO: LA POSICIÓN INDICADA EN EL MOVIMIENTO SE CORRESPONDE CON LA ESQUINA SUPERIOR IZQUIERDA DE LA PIEZA. DEBE SER TENIDO EN~%")
 		 (format t "			CUENTA, PUES LA POSICIÓN INICIAL DEL JUGADOR 2, POR EJEMPLO, DEPENDE DE LA PIEZA QUE COLOQUE.~2%")
   
 		 (format t "~&		 LAS PIEZAS SE ENCUENTRAN EN MATRICES DE FxC INDICANDO BLOQUES RELLENOS Y VACIOS DE LA MISMA. ESTO QUIERE DECIR QUE~%")
@@ -287,7 +288,8 @@
 								(progn 
 									(format t "~& Le toca mover al jugador ~a (~a). Jugador Artificial Egoista. Espere por favor...~&~%" 
 																													jugador (color-jugador jugador))
-									(setf estado-actual (first (decide-movimiento (construye-nodo estado-actual jugador) 1 -1 (tipo-jugador EGOISTA))))
+									(setf estado-actual (first (decide-movimiento (construye-nodo estado-actual jugador) 
+															(first *profundidad-tiempo*) (second *profundidad-tiempo*) 'jugador-egoista)))
 									(pinta-tablero (estado-tablero estado-actual))
 									(setf turno-actual jugador)
 									(format t "~& Introduzca cualquier valor para continuar... ")
@@ -297,7 +299,8 @@
 								(progn 
 									(format t "~& Le toca mover al jugador ~a (~a). Jugador Artificial Paranóico. Espere por favor...~&~%" 
 																													jugador (color-jugador jugador))
-									(setf estado-actual (first (decide-movimiento (construye-nodo estado-actual jugador) 1 -1 (tipo-jugador PARANOICO))))
+									(setf estado-actual (first (decide-movimiento (construye-nodo estado-actual jugador) 
+															(first *profundidad-tiempo*) (second *profundidad-tiempo*) 'jugador-paranoico)))
 									(pinta-tablero (estado-tablero estado-actual))
 									(setf turno-actual jugador)
 									(format t "~& Introduzca cualquier valor para continuar... " )
@@ -307,7 +310,8 @@
 								(progn 
 									(format t "~& Le toca mover al jugador ~a (~a). Jugador Artificial Aleatorio. Espere por favor...~&~%" 
 																													jugador (color-jugador jugador))						 
-									(setf estado-actual (first (decide-movimiento (construye-nodo estado-actual jugador) 1 -1 (tipo-jugador ALEATORIO))))
+									(setf estado-actual (first (decide-movimiento (construye-nodo estado-actual jugador) 
+															(first *profundidad-tiempo*) (second *profundidad-tiempo*) 'jugador-aleatorio)))
 									(pinta-tablero (estado-tablero estado-actual))
 									(setf turno-actual jugador)
 									(format t "~& Introduzca cualquier valor para continuar... " )
@@ -319,23 +323,15 @@
 		
 		(loop for jugador from 1 to *numero-jugadores* ;Se ha llegado al estado final.
 			if (es-estado-ganador estado-actual turno-actual jugador)
-			    do (format t "~& HA GANADO EL JUGADOR ~a (~a) con ~d PUNTOS!!!" jugador (color-jugador jugador) 
-									(puntuacion-jugador (evaluacion-estatica estado-actual turno-actual) jugador))))
-							 
+			    do (format t "~& HA GANADO EL JUGADOR ~a (~a) con ~d PUNTOS!!! ~&~%" jugador (color-jugador jugador) 
+									(puntuacion-jugador (evaluacion-estatica estado-actual turno-actual) jugador))
+			
+			finally (format t " PUNTUACIONES ORDENADAS DEL PRIMERO AL ULTIMO JUGADOR ~a ~&~%" (evaluacion-estatica estado-actual turno-actual))))
+															 
 )
 
 
 ;Funciones auxiliares.
-
-(defun tipo-jugador (identificador)
-	"devulve el nombre del tipo de jugador a partir del jugador dado"
-	(case identificador
-		 (HUMANO 	'jugador-humano)
-		 (EGOISTA 	'jugador-egoista)
-		 (PARANOICO 'jugador-paranoico)
-		 (ALEATORIO 'jugador-aleatorio))
-		 
-)
 
 (defun inicializa-variables-globales ()
 	"asigna los valores necesarios para comenzar a jugar"
@@ -343,6 +339,8 @@
 	(lee-numero-jugadores)
 	
 	(lee-tipo-jugadores)
+	
+	(lee-profundidad-tiempo)
 	
 	(crea-estado-inicial)
 	
@@ -359,12 +357,15 @@
 	
 	(loop while t ;Valida informacion introducida.
 	
-		if (or (< *numero-jugadores* 2) (> *numero-jugadores* 4))
-			do (format t "~& El numero de jugadores debe estar entre 2 y 4. Vuelva a introducirlo: ") 
-			   (setf *numero-jugadores* (read))
-	
-		else
-		    do (return-from lee-numero-jugadores *numero-jugadores*))
+		if (numberp *numero-jugadores*)
+			if (or (< *numero-jugadores* 2) (> *numero-jugadores* 4))
+				do (format t " El número de jugadores debe estar entre 2 y 4. Vuelva a introducirlo: ") 
+				   (setf *numero-jugadores* (read))
+			else
+				do (return *numero-jugadores*)
+				
+		else do (format t " El número de jugadores debe ser un valor numérico. Vuelva a introducirlo: ") 
+				(setf *numero-jugadores* (read)))
 	
 )
 
@@ -389,16 +390,59 @@
 					
 					(loop while t ;Valida informacion introducida.
 					
-					  if (or (< tipo 1) (> tipo 4))
-						  do (format t "~& Debe seleccionar un tipo correcto. Vuelva a introducirlo: ") 
-							 (setf tipo (read))
-					
+					  if (numberp tipo)
+						  if (or (< tipo 1) (> tipo 4))
+							  do (format t " Debe seleccionar un tipo correcto. Vuelva a introducirlo: ") 
+								 (setf tipo (read))
+								 
+						  else
+							  do (loop-finish)
+							  		  
 					  else
-						  do (loop-finish))
+						   do (format t " Debe indicar un valor numérico. Vuelva a introducirlo: ") 
+							  (setf tipo (read)))
 						  
 				collect tipo into tipos-jugadores
 						
 				finally (return tipos-jugadores))))
+	
+)
+
+(defun lee-profundidad-tiempo ()
+	"pregunta al usuario el limite de profundidad y o tiempo para los jugadores artificiales"
+	
+	(format t "~& Por favor, indique un límite de profundidad y tiempo (segundos) de exploración para los jugadores artificiales. ~2%")
+	(format t  "~& AVISO: SI NO SE ESTABLECE NINGÚN LIMITE, SE ESTABLECEN LIMITES DEMASIADO ALTOS O SÓLO SE ESTABLECE LIMITE DE TIEMPO, ~%")
+	(format t  "           LOS JUGADORES ARTIFICIALES PODRÍAN NO TERMINAR... AL MENOS EN ESTE SIGLO. EN ESE CASO PULSAR CTRL+C CTRL+C Y ABORTAR. ~2%")
+	(format t  "~&        PARA OMITIR ALGÚN LIMITE BASTA CON INDICAR ALGÚN VALOR NEGATIVO. ~2%")
+	(format t  "~& NOTA: Se recomienda un máximo de profundidad 2 sin tiempo o profundidades razonablemente más altas con límite de tiempo. ~2%")
+							
+	(setf *profundidad-tiempo* 
+		 
+		  (let ((valor nil))
+			   
+			   (loop for limite from 1 to 2
+			   
+				 if (eq limite 1) ;Profundidad
+					 do (format t " Indique el límite de profundidad: ")
+						(setf valor (read))
+					
+				 if (eq limite 2) ;Tiempo
+					 do (format t " Indique el límite de tiempo (segundos): ")
+						(setf valor (read))
+						
+				 do (loop while t ;Valida informacion introducida.
+					
+					  if (numberp valor)
+						  do (loop-finish)
+						  
+					  else
+						  do (format t " Debe indicar un valor numérico. Vuelva a introducirlo: ") 
+							 (setf valor (read)))
+						  
+				collect valor into limites
+						
+				finally (return limites))))
 	
 )
 
