@@ -14,7 +14,6 @@
 ;   + construye-nodo(estado turno)
 ;   + estado(nodo)
 ;   + turno(nodo)
-;   + siguiente-turno(turno)
 
 (defun decision-maxn (actual)
 	"devuelve el nodo sucesor correspondiente al movimiento mejor valorado para el jugador que lo invoca"

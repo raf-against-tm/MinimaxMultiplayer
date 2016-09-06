@@ -2,8 +2,8 @@
 
 ;Declaracion de importaciones. Los archivos deben cargarse en el orden especificado.
 
-(load "C:/IA1/MinimaxMultiplayer/game-blokus.lisp")
-(load "C:/IA1/MinimaxMultiplayer/minimax-multiplayer-v4.lisp")
+(load "path/to/game-blokus.lisp") 			  ;ACTUALZAR CON LA RUTA ADECUADA.
+(load "path/to/minimax-multiplayer-v4.lisp")  ;ACTUALZAR CON LA RUTA ADECUADA.
 
 ;Declaracion de constantes.
 (defconstant HUMANO 	1)
@@ -297,7 +297,7 @@
 							 
 							 (3 ;PARANOICO
 								(progn 
-									(format t "~& Le toca mover al jugador ~a (~a). Jugador Artificial Paranóico. Espere por favor...~&~%" 
+									(format t "~& Le toca mover al jugador ~a (~a). Jugador Artificial Paranoico. Espere por favor...~&~%" 
 																													jugador (color-jugador jugador))
 									(setf estado-actual (first (decide-movimiento (construye-nodo estado-actual jugador) 
 															(first *profundidad-tiempo*) (second *profundidad-tiempo*) 'jugador-paranoico)))
@@ -415,7 +415,7 @@
 	(format t  "~& AVISO: SI NO SE ESTABLECE NINGÚN LIMITE, SE ESTABLECEN LIMITES DEMASIADO ALTOS O SÓLO SE ESTABLECE LIMITE DE TIEMPO, ~%")
 	(format t  "           LOS JUGADORES ARTIFICIALES PODRÍAN NO TERMINAR... AL MENOS EN ESTE SIGLO. EN ESE CASO PULSAR CTRL+C CTRL+C Y ABORTAR. ~2%")
 	(format t  "~&        PARA OMITIR ALGÚN LIMITE BASTA CON INDICAR ALGÚN VALOR NEGATIVO. ~2%")
-	(format t  "~& NOTA: Se recomienda un máximo de profundidad 2 sin tiempo o profundidades razonablemente más altas con límite de tiempo. ~2%")
+	(format t  "~& NOTA: Se recomienda un máximo de profundidad 2 con tiempo o profundidades no mucho más altas y con límite de tiempo. ~2%")
 							
 	(setf *profundidad-tiempo* 
 		 

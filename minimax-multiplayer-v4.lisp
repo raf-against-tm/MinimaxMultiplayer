@@ -1,4 +1,4 @@
-;Algorimo de decision minimax extendido para aplicarlo a multiples jugadores. Renombrado en esta vesion a decide-movimiento.
+;Algorimo de decision minimax extendido para aplicarlo a multiples jugadores. Renombrado en esta version a decide-movimiento.
 
 
 ;Para hacer uso del algoritmo se supone que ha sido cargada, previamente, la implementacion de la especificacion del juego sobre 
@@ -15,7 +15,6 @@
 ;   + construye-nodo(estado turno)
 ;   + estado(nodo)
 ;   + turno(nodo)
-;   + siguiente-turno(turno)
 
 ;ESTE CODIGO CORRESPONDE A LA VERSION 4 DE MINIMAX-MULTIPLAYER, EN LA QUE SE INCLUYE LA POSIBILIDAD DE ELEGIR HEURISTICA (TIPOS DE JUGADOR)
 

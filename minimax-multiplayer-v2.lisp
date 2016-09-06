@@ -15,7 +15,6 @@
 ;   + construye-nodo(estado turno)
 ;   + estado(nodo)
 ;   + turno(nodo)
-;   + siguiente-turno(turno)
 
 ;ESTE CODIGO CORRESPONDE A LA VERSION 2 DE MINIMAX-MULTIPLAYER, A LA QUE SE LE APLICA PODA INMEDIATA Y PODA SUPERFICIAL
 
